@@ -1,0 +1,20 @@
+name: iosApp
+options:
+  bundleIdPrefix: com.example.kmpexample
+configs:
+  Debug: debug
+  Release: release
+targets:
+  iosApp:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - iosApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.kmpexample.ios
+        INFOPLIST_FILE: Info.plist
+        SWIFT_VERSION: 5.10
+    dependencies:
+      - framework: ../../kmp/core/build/XCFrameworks/release/SharedCore.xcframework

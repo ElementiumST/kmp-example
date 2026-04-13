@@ -1,0 +1,10 @@
+{
+  "name": "kmp-example-root",
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix web/app run build",
+    "build:web": "npm --prefix web/app run build",
+    "dev:web": "npm --prefix web/app run dev",
+    "install:web": "npm --prefix web/app install"
+  }
+}

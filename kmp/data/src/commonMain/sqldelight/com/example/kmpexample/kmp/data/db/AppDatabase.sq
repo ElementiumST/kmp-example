@@ -1,0 +1,16 @@
+CREATE TABLE auth_session (
+    id TEXT NOT NULL PRIMARY KEY,
+    sessionId TEXT NOT NULL
+);
+
+selectSession:
+SELECT auth_session.id, auth_session.sessionId
+FROM auth_session
+LIMIT 1;
+
+upsertSession:
+INSERT OR REPLACE INTO auth_session(id, sessionId)
+VALUES (?, ?);
+
+clearSession:
+DELETE FROM auth_session;

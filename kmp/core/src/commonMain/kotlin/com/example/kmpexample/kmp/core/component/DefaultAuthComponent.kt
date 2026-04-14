@@ -1,7 +1,6 @@
 package com.example.kmpexample.kmp.core.component
 
 import com.arkivanov.decompose.ComponentContext
-import com.example.kmpexample.kmp.core.bridge.StateSubscription
 import com.example.kmpexample.kmp.core.model.AuthScreenAction
 import com.example.kmpexample.kmp.core.model.AuthScreenState
 import com.example.kmpexample.kmp.domain.model.LoginRequest
@@ -10,34 +9,18 @@ import com.example.kmpexample.kmp.feature.base.BaseMviComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 class DefaultAuthComponent(
     componentContext: ComponentContext,
     private val loginUseCase: LoginUseCase,
     private val coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
-) : BaseMviComponent<AuthScreenState, AuthScreenAction>(AuthScreenState()),
+) : BaseMviComponent<AuthScreenState, AuthScreenAction>(
+    initialState = AuthScreenState(),
+    coroutineScope = coroutineScope,
+),
     AuthComponent,
     ComponentContext by componentContext {
-
-    override fun currentState(): AuthScreenState {
-        return state.value
-    }
-
-    override fun watchState(observer: (AuthScreenState) -> Unit): StateSubscription {
-        observer(currentState())
-
-        val job = coroutineScope.launch {
-            state.collectLatest { nextState ->
-                observer(nextState)
-            }
-        }
-
-        return StateSubscription {
-            job.cancel()
-        }
-    }
 
     override fun updateLogin(value: String) {
         onAction(AuthScreenAction.UpdateLogin(value))

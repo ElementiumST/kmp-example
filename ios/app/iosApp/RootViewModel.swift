@@ -14,10 +14,11 @@ final class RootViewModel: ObservableObject {
         let authComponent = rootComponent.authComponent
         self.rootComponent = rootComponent
         self.authComponent = authComponent
-        self.state = authComponent.currentState()
+        self.state = authComponent.currentState() as! AuthScreenState
 
         subscription = authComponent.watchState { [weak self] state in
             guard let self else { return }
+            guard let state = state as? AuthScreenState else { return }
 
             Task { @MainActor in
                 self.state = state

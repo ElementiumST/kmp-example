@@ -1,8 +1,12 @@
+import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
+
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.multiplatform")
     id("org.jetbrains.kotlin.plugin.serialization")
 }
+
+val xcf = XCFramework("SharedCore")
 
 kotlin {
     androidTarget {
@@ -21,6 +25,9 @@ kotlin {
         binaries.framework {
             baseName = "SharedCore"
             isStatic = true
+            export(project(":kmp:feature:auth"))
+            export(project(":kmp:feature:base"))
+            xcf.add(this)
         }
     }
 
@@ -28,6 +35,9 @@ kotlin {
         binaries.framework {
             baseName = "SharedCore"
             isStatic = true
+            export(project(":kmp:feature:auth"))
+            export(project(":kmp:feature:base"))
+            xcf.add(this)
         }
     }
 
@@ -35,6 +45,9 @@ kotlin {
         binaries.framework {
             baseName = "SharedCore"
             isStatic = true
+            export(project(":kmp:feature:auth"))
+            export(project(":kmp:feature:base"))
+            xcf.add(this)
         }
     }
 

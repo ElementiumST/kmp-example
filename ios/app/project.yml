@@ -18,3 +18,4 @@ targets:
         SWIFT_VERSION: 5.10
     dependencies:
       - framework: ../../kmp/core/build/XCFrameworks/release/SharedCore.xcframework
+      - sdk: libsqlite3.tbd

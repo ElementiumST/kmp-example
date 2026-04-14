@@ -1,7 +1,18 @@
 package com.example.kmpexample.kmp.core.component
 
+import com.example.kmpexample.kmp.core.bridge.StateSubscription
 import com.example.kmpexample.kmp.core.model.AuthScreenAction
 import com.example.kmpexample.kmp.core.model.AuthScreenState
 import com.example.kmpexample.kmp.feature.base.MviComponent
 
-interface AuthComponent : MviComponent<AuthScreenState, AuthScreenAction>
+interface AuthComponent : MviComponent<AuthScreenState, AuthScreenAction> {
+    fun currentState(): AuthScreenState
+
+    fun watchState(observer: (AuthScreenState) -> Unit): StateSubscription
+
+    fun updateLogin(value: String)
+
+    fun updatePassword(value: String)
+
+    fun submit()
+}

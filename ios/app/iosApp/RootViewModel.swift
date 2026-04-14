@@ -5,14 +5,18 @@ import SharedCore
 final class RootViewModel: ObservableObject {
     @Published private(set) var state: AuthScreenState
 
-    private let controller: AppleRootController
+    private let rootComponent: any RootComponent
+    private let authComponent: any AuthComponent
     private var subscription: StateSubscription?
 
     init(factory: AppleAppFactory = AppleAppFactory()) {
-        self.controller = factory.createRootController()
-        self.state = controller.currentState()
+        let rootComponent = factory.createRootComponent()
+        let authComponent = rootComponent.authComponent
+        self.rootComponent = rootComponent
+        self.authComponent = authComponent
+        self.state = authComponent.currentState()
 
-        subscription = controller.watchState { [weak self] state in
+        subscription = authComponent.watchState { [weak self] state in
             guard let self else { return }
 
             Task { @MainActor in
@@ -22,15 +26,15 @@ final class RootViewModel: ObservableObject {
     }
 
     func updateLogin(_ value: String) {
-        controller.updateLogin(value: value)
+        authComponent.updateLogin(value: value)
     }
 
     func updatePassword(_ value: String) {
-        controller.updatePassword(value: value)
+        authComponent.updatePassword(value: value)
     }
 
     func submit() {
-        controller.submit()
+        authComponent.submit()
     }
 
     deinit {

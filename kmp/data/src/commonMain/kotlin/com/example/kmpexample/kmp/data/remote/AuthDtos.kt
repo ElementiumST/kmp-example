@@ -101,7 +101,7 @@ data class UserProfileDto(
 data class ContactValueDto(
     val value: String,
     val privacy: String,
-    val usageRule: String,
+    val usageRule: String = "",
 ) {
     fun toDomain(): ContactValue {
         return ContactValue(

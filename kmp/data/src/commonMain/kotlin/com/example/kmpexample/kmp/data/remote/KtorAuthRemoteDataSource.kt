@@ -15,7 +15,7 @@ class KtorAuthRemoteDataSource(
     private val networkConfig: NetworkConfig,
 ) : RemoteAuthDataSource {
     override suspend fun login(request: LoginRequest): AuthSession {
-        val response = httpClient.post("${networkConfig.baseUrl.trimEnd('/')}/login") {
+        val response = httpClient.post("${networkConfig.baseUrl}/login") {
             contentType(ContentType.Application.Json)
             setBody(
                 LoginRequestDto(

@@ -1,23 +1,24 @@
 import { useEffect, useMemo, useState } from 'react'
-import { createFallbackState, getWebRootController, type AuthScreenState } from './bridge/kmp'
+import { createFallbackState, getWebRootComponent, type AuthScreenState } from './bridge/kmp'
 
 export function App() {
-  const controller = useMemo(() => getWebRootController(), [])
+  const rootComponent = useMemo(() => getWebRootComponent(), [])
+  const authComponent = rootComponent?.authComponent ?? null
   const [state, setState] = useState<AuthScreenState>(
-    controller?.currentState() ?? createFallbackState(),
+    authComponent?.currentState() ?? createFallbackState(),
   )
 
   useEffect(() => {
-    if (!controller) {
+    if (!authComponent) {
       return
     }
 
-    controller.subscribeState(setState)
+    const subscription = authComponent.watchState(setState)
 
     return () => {
-      controller.clearSubscription()
+      subscription.cancel()
     }
-  }, [controller])
+  }, [authComponent])
 
   return (
     <main className="app-shell">
@@ -31,8 +32,8 @@ export function App() {
           placeholder="Логин"
           onChange={(event) => {
             const value = event.target.value
-            if (controller) {
-              controller.updateLogin(value)
+            if (authComponent) {
+              authComponent.updateLogin(value)
               return
             }
 
@@ -50,8 +51,8 @@ export function App() {
           placeholder="Пароль"
           onChange={(event) => {
             const value = event.target.value
-            if (controller) {
-              controller.updatePassword(value)
+            if (authComponent) {
+              authComponent.updatePassword(value)
               return
             }
 
@@ -67,9 +68,16 @@ export function App() {
           type="button"
           disabled={!state.canSubmit}
           onClick={() => {
-            if (controller) {
-              controller.submit()
+            if (authComponent) {
+              authComponent.submit()
+              return
             }
+
+            setState((current) => ({
+              ...current,
+              errorMessage:
+                'Shared KMP bridge не подключен. Пересоберите web bridge и перезапустите web shell.',
+            }))
           }}
         >
           {state.submitLabel}
@@ -84,7 +92,7 @@ export function App() {
           </div>
         ) : null}
 
-        {!controller ? (
+        {!authComponent ? (
           <p className="hint-text">
             Web UI поднят в fallback-режиме. После подключения KMP bridge форма начнет работать через
             shared state.

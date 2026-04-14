@@ -1,15 +1,17 @@
 package com.example.kmpexample.kmp.data.local
 
+import com.example.kmpexample.kmp.domain.model.PersistedAuthSession
+
 class InMemorySessionDataSource : LocalSessionDataSource {
-    private var sessionId: String? = null
+    private var session: PersistedAuthSession? = null
 
-    override fun currentSessionId(): String? = sessionId
+    override fun currentPersistedSession(): PersistedAuthSession? = session
 
-    override suspend fun saveSessionId(sessionId: String) {
-        this.sessionId = sessionId
+    override suspend fun savePersistedSession(session: PersistedAuthSession) {
+        this.session = session
     }
 
     override suspend fun clear() {
-        sessionId = null
+        session = null
     }
 }

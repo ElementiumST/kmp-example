@@ -3,15 +3,15 @@ package com.example.kmpexample.kmp.core.app
 import com.arkivanov.decompose.ComponentContext
 import com.example.kmpexample.kmp.core.component.DefaultRootComponent
 import com.example.kmpexample.kmp.core.component.RootComponent
-import com.example.kmpexample.kmp.core.di.coreModule
 import com.example.kmpexample.kmp.data.di.dataModule
+import com.example.kmpexample.kmp.feature.auth.di.authFeatureModule
 import org.koin.core.Koin
-import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
+import org.koin.mp.KoinPlatformTools
 
 object SharedApp {
     fun ensureStarted(config: SharedAppConfig = SharedAppConfig()): Koin {
-        GlobalContext.getOrNull()?.let { existingKoin ->
+        KoinPlatformTools.defaultContext().getOrNull()?.let { existingKoin ->
             return existingKoin
         }
 
@@ -22,12 +22,12 @@ object SharedApp {
                         networkConfig = config.networkConfig,
                         databaseFactory = config.databaseFactory,
                     ),
-                    coreModule(),
+                    authFeatureModule(),
                 ) + config.additionalModules,
             )
         }
 
-        return GlobalContext.get()
+        return KoinPlatformTools.defaultContext().get()
     }
 
     fun createRootComponent(
@@ -38,7 +38,10 @@ object SharedApp {
 
         return DefaultRootComponent(
             componentContext = componentContext,
+            clearPersistedAuthSessionUseCase = koin.get(),
+            getPersistedAuthSessionUseCase = koin.get(),
             loginUseCase = koin.get(),
+            loginWithTokenUseCase = koin.get(),
         )
     }
 

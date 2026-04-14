@@ -22,14 +22,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import com.example.kmpexample.kmp.core.app.SharedApp
+import com.example.kmpexample.kmp.core.app.SharedAppConfig
 import com.example.kmpexample.kmp.core.component.RootComponent
-import com.example.kmpexample.kmp.core.model.AuthScreenAction
+import com.example.kmpexample.kmp.data.db.AndroidDatabaseFactory
+import com.example.kmpexample.kmp.feature.auth.model.AuthScreenAction
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val rootComponent = SharedApp.createRootComponent()
+        val rootComponent = SharedApp.createRootComponent(
+            config = SharedAppConfig(
+                databaseFactory = AndroidDatabaseFactory(applicationContext),
+            ),
+        )
 
         setContent {
             AndroidApp(rootComponent = rootComponent)

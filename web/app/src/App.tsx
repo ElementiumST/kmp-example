@@ -1,24 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
-import { createFallbackState, getWebRootComponent, type AuthScreenState } from './bridge/kmp'
+import { useState } from 'react'
+import { createFallbackState, type AuthScreenState } from './bridge/kmp'
 
 export function App() {
-  const rootComponent = useMemo(() => getWebRootComponent(), [])
-  const authComponent = rootComponent?.authComponent ?? null
+  const authComponent = null
   const [state, setState] = useState<AuthScreenState>(
-    authComponent?.currentState() ?? createFallbackState(),
+    createFallbackState(),
   )
-
-  useEffect(() => {
-    if (!authComponent) {
-      return
-    }
-
-    const subscription = authComponent.watchState(setState)
-
-    return () => {
-      subscription.cancel()
-    }
-  }, [authComponent])
 
   return (
     <main className="app-shell">
@@ -32,11 +19,6 @@ export function App() {
           placeholder="Логин"
           onChange={(event) => {
             const value = event.target.value
-            if (authComponent) {
-              authComponent.updateLogin(value)
-              return
-            }
-
             setState((current) => ({
               ...current,
               login: value,
@@ -51,11 +33,6 @@ export function App() {
           placeholder="Пароль"
           onChange={(event) => {
             const value = event.target.value
-            if (authComponent) {
-              authComponent.updatePassword(value)
-              return
-            }
-
             setState((current) => ({
               ...current,
               password: value,
@@ -68,15 +45,10 @@ export function App() {
           type="button"
           disabled={!state.canSubmit}
           onClick={() => {
-            if (authComponent) {
-              authComponent.submit()
-              return
-            }
-
             setState((current) => ({
               ...current,
               errorMessage:
-                'Shared KMP bridge не подключен. Пересоберите web bridge и перезапустите web shell.',
+                'Shared auth-logic для web сейчас не подключена. Используется локальный fallback UI.',
             }))
           }}
         >

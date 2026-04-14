@@ -28,4 +28,13 @@ class KtorAuthRemoteDataSource(
 
         return response.toDomain()
     }
+
+    override suspend fun loginWithToken(token: String): AuthSession {
+        val response = httpClient.post("${networkConfig.baseUrl}/login-with-token") {
+            contentType(ContentType.Application.Json)
+            setBody(LoginWithTokenRequestDto(token = token))
+        }.body<LoginResponseDto>()
+
+        return response.toDomain()
+    }
 }

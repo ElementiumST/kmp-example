@@ -40,8 +40,9 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":kmp:data"))
+            api(project(":kmp:data"))
             implementation(project(":kmp:domain"))
+            api(project(":kmp:feature:auth"))
             api(project(":kmp:feature:base"))
             api(libs.decompose)
             implementation(libs.koin.core)

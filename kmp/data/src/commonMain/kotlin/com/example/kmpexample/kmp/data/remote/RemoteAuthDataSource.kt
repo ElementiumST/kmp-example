@@ -5,4 +5,6 @@ import com.example.kmpexample.kmp.domain.model.LoginRequest
 
 interface RemoteAuthDataSource {
     suspend fun login(request: LoginRequest): AuthSession
+
+    suspend fun loginWithToken(token: String): AuthSession
 }

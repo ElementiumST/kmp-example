@@ -16,6 +16,11 @@ data class LoginRequestDto(
 )
 
 @Serializable
+data class LoginWithTokenRequestDto(
+    val token: String,
+)
+
+@Serializable
 data class LoginResponseDto(
     val sessionId: String,
     val user: UserProfileDto,

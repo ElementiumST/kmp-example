@@ -1,21 +1,28 @@
 package com.example.kmpexample.kmp.data.local
 
 import com.example.kmpexample.kmp.data.db.AppDatabase
+import com.example.kmpexample.kmp.domain.model.PersistedAuthSession
 
 class SqlDelightSessionDataSource(
     private val database: AppDatabase,
 ) : LocalSessionDataSource {
-    override fun currentSessionId(): String? {
+    override fun currentPersistedSession(): PersistedAuthSession? {
         return database.appDatabaseQueries
             .selectSession()
             .executeAsOneOrNull()
-            ?.sessionId
+            ?.let { storedSession ->
+                PersistedAuthSession(
+                    sessionId = storedSession.sessionId,
+                    loginToken = storedSession.loginToken,
+                )
+            }
     }
 
-    override suspend fun saveSessionId(sessionId: String) {
+    override suspend fun savePersistedSession(session: PersistedAuthSession) {
         database.appDatabaseQueries.upsertSession(
             id = AUTH_SESSION_ID,
-            sessionId = sessionId,
+            sessionId = session.sessionId,
+            loginToken = session.loginToken,
         )
     }
 

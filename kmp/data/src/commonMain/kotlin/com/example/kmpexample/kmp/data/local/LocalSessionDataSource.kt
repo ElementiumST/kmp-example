@@ -1,9 +1,11 @@
 package com.example.kmpexample.kmp.data.local
 
-interface LocalSessionDataSource {
-    fun currentSessionId(): String?
+import com.example.kmpexample.kmp.domain.model.PersistedAuthSession
 
-    suspend fun saveSessionId(sessionId: String)
+interface LocalSessionDataSource {
+    fun currentPersistedSession(): PersistedAuthSession?
+
+    suspend fun savePersistedSession(session: PersistedAuthSession)
 
     suspend fun clear()
 }

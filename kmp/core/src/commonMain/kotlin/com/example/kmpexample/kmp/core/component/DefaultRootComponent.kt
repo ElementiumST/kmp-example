@@ -5,12 +5,20 @@ import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.value.Value
+import com.example.kmpexample.kmp.domain.usecase.ClearPersistedAuthSessionUseCase
+import com.example.kmpexample.kmp.domain.usecase.GetPersistedAuthSessionUseCase
 import com.example.kmpexample.kmp.domain.usecase.LoginUseCase
+import com.example.kmpexample.kmp.domain.usecase.LoginWithTokenUseCase
+import com.example.kmpexample.kmp.feature.auth.component.AuthComponent
+import com.example.kmpexample.kmp.feature.auth.component.DefaultAuthComponent
 import kotlinx.serialization.Serializable
 
 class DefaultRootComponent(
     componentContext: ComponentContext,
+    private val clearPersistedAuthSessionUseCase: ClearPersistedAuthSessionUseCase,
+    private val getPersistedAuthSessionUseCase: GetPersistedAuthSessionUseCase,
     private val loginUseCase: LoginUseCase,
+    private val loginWithTokenUseCase: LoginWithTokenUseCase,
 ) : RootComponent, ComponentContext by componentContext {
     private val navigation = StackNavigation<Config>()
 
@@ -33,7 +41,10 @@ class DefaultRootComponent(
             Config.Auth -> RootComponent.Child.Auth(
                 component = DefaultAuthComponent(
                     componentContext = childComponentContext,
+                    clearPersistedAuthSessionUseCase = clearPersistedAuthSessionUseCase,
+                    getPersistedAuthSessionUseCase = getPersistedAuthSessionUseCase,
                     loginUseCase = loginUseCase,
+                    loginWithTokenUseCase = loginWithTokenUseCase,
                 ),
             )
         }

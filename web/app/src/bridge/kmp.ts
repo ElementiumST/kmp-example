@@ -11,34 +11,6 @@ export type AuthScreenState = {
   canSubmit: boolean
 }
 
-export type StateSubscription = {
-  cancel: () => void
-}
-
-export type WebAuthComponent = {
-  currentState: () => AuthScreenState
-  watchState: (observer: (state: AuthScreenState) => void) => StateSubscription
-  updateLogin: (value: string) => void
-  updatePassword: (value: string) => void
-  submit: () => void
-}
-
-export type WebRootComponent = {
-  authComponent: WebAuthComponent
-}
-
-declare global {
-  interface Window {
-    SharedCoreBridge?: {
-      createWebRootComponent: () => WebRootComponent
-    }
-  }
-}
-
-export function getWebRootComponent(): WebRootComponent | null {
-  return window.SharedCoreBridge?.createWebRootComponent?.() ?? null
-}
-
 export function createFallbackState(): AuthScreenState {
   return {
     login: '',

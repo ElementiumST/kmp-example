@@ -1,0 +1,13 @@
+---
+description: Web shell guidance for React bridge layer
+globs: web/app/**
+alwaysApply: false
+---
+
+# Web Shell
+
+- `web/app` is a React + TypeScript shell over the KMP web bridge exported from `kmp/core`.
+- Keep browser UI, Vite setup, and bridge adaptation here.
+- Prefer consuming shared state from the bridge rather than reimplementing business logic in TypeScript.
+- If the required shared API is missing, update `kmp/core` bridge code instead of inventing a parallel web-only contract.
+- Check `web/app/README.md` when working on bridge setup or build integration.

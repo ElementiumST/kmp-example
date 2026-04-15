@@ -1,0 +1,13 @@
+---
+description: iOS shell guidance for SwiftUI bridge layer
+globs: ios/app/**
+alwaysApply: false
+---
+
+# iOS Shell
+
+- `ios/app` is a SwiftUI shell over `SharedCore.framework` built from `kmp/core`.
+- Keep native SwiftUI views, project generation, and Apple integration details here.
+- Prefer consuming shared state through the existing Apple bridge instead of duplicating domain logic in Swift.
+- If the shell needs new shared behavior, adjust `kmp/core` bridge code rather than creating a Swift-only source of truth.
+- Check `ios/app/README.md` before changing framework build or project generation steps.

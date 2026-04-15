@@ -1,0 +1,14 @@
+---
+description: Shared Kotlin Multiplatform module boundaries
+globs: kmp/**
+alwaysApply: false
+---
+
+# KMP Modules
+
+- `kmp/domain` owns shared models, repository contracts, and use cases. Start there for business rules.
+- `kmp/data` owns repository implementations, Ktor clients, SQLDelight, and platform-specific data wiring. It depends on `kmp/domain`.
+- `kmp/feature/base` owns reusable feature primitives such as base MVI types.
+- `kmp/core` composes the app, wires shared dependencies, and exposes Apple/Web bridge entry points.
+- If a task is platform-specific, avoid pushing it into shared KMP code unless the behavior must be shared.
+- Before changing targets or dependencies, read the affected module `build.gradle.kts`.

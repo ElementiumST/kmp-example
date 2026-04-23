@@ -1,0 +1,29 @@
+<section class="card">
+  <h1>Авторизация</h1>
+
+  <label class="field">
+    <span>Логин</span>
+    <input
+      type="text"
+      [value]="state().login"
+      (input)="onLoginChange(($any($event.target).value ?? '').toString())"
+    />
+  </label>
+
+  <label class="field">
+    <span>Пароль</span>
+    <input
+      type="password"
+      [value]="state().password"
+      (input)="onPasswordChange(($any($event.target).value ?? '').toString())"
+    />
+  </label>
+
+  <button type="button" [disabled]="!state().canSubmit || state().isLoading" (click)="submit()">
+    {{ state().isLoading ? 'Выполняется...' : state().submitLabel }}
+  </button>
+
+  @if (state().errorMessage) {
+  <p class="error">{{ state().errorMessage }}</p>
+  }
+</section>

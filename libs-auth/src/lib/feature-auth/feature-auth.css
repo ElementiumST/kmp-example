@@ -1,0 +1,43 @@
+.card {
+  max-width: 420px;
+  margin: 2rem auto;
+  padding: 1.25rem;
+  border: 1px solid #d7d7d7;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  background: #fff;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+input {
+  border: 1px solid #bdbdbd;
+  border-radius: 8px;
+  padding: 0.6rem 0.7rem;
+}
+
+button {
+  border: 0;
+  border-radius: 8px;
+  padding: 0.65rem 0.9rem;
+  color: #fff;
+  background: #1565c0;
+  cursor: pointer;
+}
+
+button:disabled {
+  background: #90a4ae;
+  cursor: default;
+}
+
+.error {
+  color: #b00020;
+  margin: 0;
+}
+

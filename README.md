@@ -21,7 +21,7 @@
 | ------------------ | ------------------------------------ | ------------------------------------------- |
 | `android/app`      | Android-приложение (Jetpack Compose) | Android UI, manifest, запуск приложения     |
 | `ios/app`          | iOS-приложение (SwiftUI)             | iOS UI и нативная интеграция                |
-| `web/app`          | Web-приложение (React + TypeScript)  | Web UI и фронтенд-инфраструктура            |
+| `web-app`          | Web-приложение (Angular + Nx)        | Web UI и фронтенд-инфраструктура            |
 | `kmp/core`         | Общий слой приложения                | Навигация, композиция, связывание слоев     |
 | `kmp/data`         | Слой данных                          | API, база данных, реализация репозиториев   |
 | `kmp/domain`       | Доменный слой                        | Модели, use-case'ы, интерфейсы репозиториев |
@@ -37,7 +37,7 @@ kmp/core -> kmp/data
 kmp/core -> kmp/domain
 kmp/core -> kmp/feature/base
 kmp/data -> kmp/domain
-web/app -> kmp/core (JS сборка)
+web-app -> kmp/core (JS сборка)
 ios/app -> SharedCore.framework (из kmp/core)
 ```
 
@@ -60,7 +60,7 @@ ios/app -> SharedCore.framework (из kmp/core)
 ## ⚠️ Важные ограничения
 
 * `android/app` **не должен напрямую зависеть** от `kmp/data` или `kmp/domain` — только через `kmp/core`
-* `web/app` и `ios/app` должны быть **тонкими слоями**:
+* `web-app` и `ios/app` должны быть **тонкими слоями**:
 
     * без дублирования бизнес-логики
     * только адаптация UI к общей логике
@@ -86,7 +86,7 @@ ios/app -> SharedCore.framework (из kmp/core)
 Перед тем как что-то менять:
 
 1. Ознакомьтесь с `build.gradle.kts` нужного модуля
-2. Проверьте локальные README (особенно в `web/app` и `ios/app`)
+2. Проверьте локальные README (особенно в `web-app` и `ios/app`)
 3. Убедитесь, что изменения вносятся в **правильный слой архитектуры**
 
 > ⚠️ Не используйте `.ai/mcp/mcp.json` как документацию проекта — это не источник архитектуры.

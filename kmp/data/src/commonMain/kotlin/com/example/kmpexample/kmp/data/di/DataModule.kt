@@ -7,12 +7,17 @@ import com.example.kmpexample.kmp.data.local.LocalSessionDataSource
 import com.example.kmpexample.kmp.data.local.SqlDelightSessionDataSource
 import com.example.kmpexample.kmp.data.network.createSharedJson
 import com.example.kmpexample.kmp.data.network.platformHttpClient
+import com.example.kmpexample.kmp.data.remote.ContactsWebSocketClient
 import com.example.kmpexample.kmp.data.remote.KtorAuthRemoteDataSource
+import com.example.kmpexample.kmp.data.remote.KtorContactsRemoteDataSource
 import com.example.kmpexample.kmp.data.remote.RemoteAuthDataSource
+import com.example.kmpexample.kmp.data.remote.RemoteContactsDataSource
 import com.example.kmpexample.kmp.data.repository.AuthRepositoryImpl
+import com.example.kmpexample.kmp.data.repository.ContactsRepositoryImpl
 import com.example.kmpexample.kmp.data.session.DefaultSessionStore
 import com.example.kmpexample.kmp.data.session.SessionStore
 import com.example.kmpexample.kmp.domain.repository.AuthRepository
+import com.example.kmpexample.kmp.domain.repository.ContactsRepository
 import io.ktor.client.HttpClient
 import org.koin.dsl.module
 
@@ -30,4 +35,7 @@ fun dataModule(
     single<HttpClient> { platformHttpClient(get<SessionStore>()::currentSessionId) }
     single<RemoteAuthDataSource> { KtorAuthRemoteDataSource(get(), get()) }
     single<AuthRepository> { AuthRepositoryImpl(get(), get()) }
+    single<RemoteContactsDataSource> { KtorContactsRemoteDataSource(get(), get()) }
+    single { ContactsWebSocketClient(get(), get(), get()) }
+    single<ContactsRepository> { ContactsRepositoryImpl(get(), get()) }
 }

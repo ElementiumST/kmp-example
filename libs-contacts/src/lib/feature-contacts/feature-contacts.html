@@ -1,0 +1,227 @@
+@if (isList()) {
+<section class="page">
+  <header class="header">
+    <h1>Контакты</h1>
+    <button type="button" (click)="refresh()">Обновить</button>
+  </header>
+
+  <section class="toolbar">
+    <input
+      type="text"
+      placeholder="Поиск"
+      [value]="listState().query"
+      (input)="updateSearch(($any($event.target).value ?? '').toString())"
+    />
+    <button type="button" (click)="openAddOverlay()">Добавить</button>
+  </section>
+
+  @if (listState().errorMessage) {
+  <p class="error">{{ listState().errorMessage }}</p>
+  }
+  @if (listState().snackbarMessage) {
+  <p class="hint">{{ listState().snackbarMessage }}</p>
+  }
+
+  @if (listState().isLoading && listState().items.length === 0) {
+  <p>Загрузка контактов...</p>
+  } @else if (listState().items.length === 0) {
+  <p class="hint">Пока нет контактов. Нажмите «Добавить».</p>
+  } @else {
+  <ul class="list">
+    @for (contact of listState().items; track trackContact($index, contact)) {
+    <li class="row">
+      <button class="open" type="button" (click)="openInfo($index)">
+        <strong>{{ contact.name || '(без имени)' }}</strong>
+        <span>{{ contact.email || contact.phone || contact.profileId }}</span>
+      </button>
+      <div class="row-actions">
+        <button type="button" (click)="openEdit($index)">Изменить</button>
+        <button type="button" (click)="deleteFromMenu($index)">Удалить</button>
+      </div>
+    </li>
+    }
+  </ul>
+  }
+
+  @if (canLoadMore()) {
+  <button type="button" (click)="loadMore()">Загрузить еще</button>
+  }
+
+  @if (listState().isAddOverlayVisible) {
+  <section class="overlay">
+    <header>
+      <h2>Добавить контакт</h2>
+      <button type="button" (click)="closeAddOverlay()">Закрыть</button>
+    </header>
+    <input
+      type="text"
+      placeholder="Поиск собеседников"
+      [value]="listState().addOverlay.query"
+      (input)="updateAddOverlayQuery(($any($event.target).value ?? '').toString())"
+    />
+    <button type="button" (click)="openCreate(); closeAddOverlay()">Создать заметку</button>
+
+    @if (listState().addOverlay.errorMessage) {
+    <p class="error">{{ listState().addOverlay.errorMessage }}</p>
+    }
+    <ul class="list">
+      @for (item of listState().addOverlay.items; track item.profileId) {
+      <li class="row">
+        <div>
+          <strong>{{ item.name || item.profileId }}</strong>
+          <span>{{ item.email || item.phone }}</span>
+        </div>
+        <button type="button" (click)="inviteInterlocutor(item.profileId)">
+          {{
+            listState().addOverlay.invitingProfileIds.includes(item.profileId)
+              ? 'Отправка...'
+              : item.isInContacts
+                ? 'Уже в контактах'
+                : 'Добавить'
+          }}
+        </button>
+      </li>
+      }
+    </ul>
+    @if (listState().addOverlay.hasMore && !listState().addOverlay.isLoadingMore) {
+    <button type="button" (click)="loadMoreOverlay()">Загрузить еще</button>
+    }
+  </section>
+  }
+</section>
+}
+
+@if (isInfo() && infoState()) {
+<section class="page">
+  <header class="header">
+    <button type="button" (click)="infoBack()">Назад</button>
+    <h1>{{ infoState()!.contact.name || 'Контакт' }}</h1>
+  </header>
+  @if (infoState()!.errorMessage) {
+  <p class="error">{{ infoState()!.errorMessage }}</p>
+  }
+  @if (infoState()!.snackbarMessage) {
+  <p class="hint">{{ infoState()!.snackbarMessage }}</p>
+  }
+
+  <section class="card">
+    <p><strong>Email:</strong> {{ infoState()!.contact.email || '—' }}</p>
+    <p><strong>Телефон:</strong> {{ infoState()!.contact.phone || '—' }}</p>
+    <p><strong>Комментарий:</strong> {{ infoState()!.contact.note || '—' }}</p>
+    @if (infoState()!.isExtraExpanded) {
+    <p><strong>О себе:</strong> {{ infoState()!.contact.aboutSelf || '—' }}</p>
+    <p><strong>Доп. контакт:</strong> {{ infoState()!.contact.additionalContact || '—' }}</p>
+    }
+    <button type="button" (click)="infoToggleExtra()">
+      {{ infoState()!.isExtraExpanded ? 'Скрыть подробности' : 'Показать подробности' }}
+    </button>
+  </section>
+
+  <section class="actions">
+    <button type="button" (click)="infoEdit()">Редактировать</button>
+    @if (infoState()!.isCallButtonsVisible) {
+    <button type="button" (click)="infoAudioCall()">Аудио</button>
+    <button type="button" (click)="infoVideoCall()">Видео</button>
+    <button type="button" (click)="infoWriteMessage()">Сообщение</button>
+    }
+    @if (infoState()!.isAddToContactsVisible) {
+    <button type="button" (click)="infoInvite()">
+      {{ infoState()!.isInviting ? 'Отправка...' : 'Добавить в контакты' }}
+    </button>
+    }
+    @if (infoState()!.isDeleteVisible) {
+    <button type="button" (click)="infoDelete()">
+      {{ infoState()!.isDeleting ? 'Удаление...' : 'Удалить контакт' }}
+    </button>
+    }
+  </section>
+</section>
+}
+
+@if (isEditor() && editorState()) {
+<section class="page">
+  <header class="header">
+    <button type="button" (click)="editorBack()">Назад</button>
+    <h1>{{ editorState()!.mode === 'CREATE' ? 'Новая заметка' : 'Редактирование' }}</h1>
+  </header>
+  @if (editorState()!.errorMessage) {
+  <p class="error">{{ editorState()!.errorMessage }}</p>
+  }
+  <section class="form">
+    @if (editorState()!.isNote) {
+    <label>
+      <span>Имя</span>
+      <input
+        type="text"
+        [value]="editorState()!.draft.name"
+        (input)="updateEditorName(($any($event.target).value ?? '').toString())"
+      />
+      @if (editorState()!.validation.name) {
+      <small class="error">{{ errorMessage(editorState()!.validation.name) }}</small>
+      }
+    </label>
+    <label>
+      <span>Email</span>
+      <input
+        type="text"
+        [value]="editorState()!.draft.email"
+        (input)="updateEditorEmail(($any($event.target).value ?? '').toString())"
+      />
+      @if (editorState()!.validation.email) {
+      <small class="error">{{ errorMessage(editorState()!.validation.email) }}</small>
+      }
+    </label>
+    <label>
+      <span>Телефон</span>
+      <input
+        type="text"
+        [value]="editorState()!.draft.phone"
+        (input)="updateEditorPhone(($any($event.target).value ?? '').toString())"
+      />
+      @if (editorState()!.validation.phone) {
+      <small class="error">{{ errorMessage(editorState()!.validation.phone) }}</small>
+      }
+    </label>
+    }
+
+    <label>
+      <span>Комментарий</span>
+      <textarea
+        rows="4"
+        [value]="editorState()!.draft.note"
+        (input)="updateEditorNote(($any($event.target).value ?? '').toString())"
+      ></textarea>
+      @if (editorState()!.validation.note) {
+      <small class="error">{{ errorMessage(editorState()!.validation.note) }}</small>
+      }
+    </label>
+
+    <label>
+      <span>Теги</span>
+      <input
+        type="text"
+        [value]="editorState()!.draft.tagsText"
+        (input)="updateEditorTags(($any($event.target).value ?? '').toString())"
+      />
+      @if (editorState()!.validation.tags) {
+      <small class="error">{{ errorMessage(editorState()!.validation.tags) }}</small>
+      }
+    </label>
+
+    <button type="button" [disabled]="!editorState()!.canSave || editorState()!.isSaving" (click)="editorSave()">
+      {{ editorState()!.isSaving ? 'Сохранение...' : editorState()!.mode === 'CREATE' ? 'Создать' : 'Сохранить' }}
+    </button>
+  </section>
+
+  @if (editorState()!.showLeaveConfirmation) {
+  <section class="overlay">
+    <h3>Выйти без сохранения?</h3>
+    <p>Изменения будут потеряны.</p>
+    <div class="row-actions">
+      <button type="button" (click)="editorConfirmLeave()">Выйти</button>
+      <button type="button" (click)="editorCancelLeave()">Отмена</button>
+    </div>
+  </section>
+  }
+</section>
+}

@@ -1,0 +1,22 @@
+{
+  "name": "feature-contacts",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs-contacts/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": [
+        "{options.reportsDirectory}"
+      ],
+      "options": {
+        "reportsDirectory": "coverage/libs-contacts"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

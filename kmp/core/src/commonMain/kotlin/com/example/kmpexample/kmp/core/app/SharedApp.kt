@@ -5,6 +5,7 @@ import com.example.kmpexample.kmp.core.component.DefaultRootComponent
 import com.example.kmpexample.kmp.core.component.RootComponent
 import com.example.kmpexample.kmp.data.di.dataModule
 import com.example.kmpexample.kmp.feature.auth.di.authFeatureModule
+import com.example.kmpexample.kmp.feature.contacts.di.contactsFeatureModule
 import org.koin.core.Koin
 import org.koin.core.context.startKoin
 import org.koin.mp.KoinPlatformTools
@@ -23,6 +24,7 @@ object SharedApp {
                         databaseFactory = config.databaseFactory,
                     ),
                     authFeatureModule(),
+                    contactsFeatureModule(),
                 ) + config.additionalModules,
             )
         }
@@ -42,6 +44,14 @@ object SharedApp {
             getPersistedAuthSessionUseCase = koin.get(),
             loginUseCase = koin.get(),
             loginWithTokenUseCase = koin.get(),
+            getContactsUseCase = koin.get(),
+            createNoteContactUseCase = koin.get(),
+            updateContactUseCase = koin.get(),
+            deleteContactUseCase = koin.get(),
+            inviteContactUseCase = koin.get(),
+            findInterlocutorsUseCase = koin.get(),
+            findContactsPresencesUseCase = koin.get(),
+            observeContactEventsUseCase = koin.get(),
         )
     }
 

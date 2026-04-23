@@ -1,0 +1,15 @@
+{
+  "images": [
+    {
+      "filename": "shared_cont_info_messege_fill.svg",
+      "idiom": "universal"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  },
+  "properties": {
+    "preserves-vector-representation": true
+  }
+}

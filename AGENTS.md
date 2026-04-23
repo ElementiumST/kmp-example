@@ -2,7 +2,7 @@
 
 ## Source Of Truth
 - Gradle modules are declared in `settings.gradle.kts`.
-- `web/app` and `ios/app` are standalone platform shells and should also be treated as project zones.
+- `web-app` and `ios/app` are standalone platform shells and should also be treated as project zones.
 
 ## Project Map
 | Zone | Role | Depends On | Edit Here When |
@@ -12,7 +12,7 @@
 | `kmp/data` | Shared data layer with Ktor and SQLDelight | `kmp/domain` | Networking, persistence, repository implementations |
 | `kmp/domain` | Shared domain contracts, models, use cases | none inside project | Business models, repository interfaces, use cases |
 | `kmp/feature/base` | Shared feature primitives and MVI base types | none inside project | Base feature abstractions and reusable state machinery |
-| `web/app` | React + TypeScript shell over the KMP web bridge | built `kmp/core` JS output | Web-only UI, bridge integration, frontend tooling |
+| `web-app` | Angular + Nx shell over the KMP web bridge | built `kmp/core` JS output | Web-only UI, bridge integration, frontend tooling |
 | `ios/app` | SwiftUI shell over `SharedCore.framework` | built `kmp/core` Apple framework | iOS-only UI and native integration |
 
 ## Dependency Direction
@@ -22,7 +22,7 @@ kmp/core -> kmp/data
 kmp/core -> kmp/domain
 kmp/core -> kmp/feature/base
 kmp/data -> kmp/domain
-web/app -> kmp/core bridge output
+web-app -> kmp/core bridge output
 ios/app -> SharedCore.framework from kmp/core
 ```
 
@@ -32,7 +32,7 @@ ios/app -> SharedCore.framework from kmp/core
 - If a change affects business rules or shared models, start in `kmp/domain`.
 - If a change affects API, storage, or repository wiring, start in `kmp/data`.
 - If a change affects cross-platform state, root composition, or platform bridges, start in `kmp/core`.
-- Keep `web/app` and `ios/app` thin: they should adapt native/web UI to shared KMP behavior, not duplicate domain logic.
+- Keep `web-app` and `ios/app` thin: they should adapt native/web UI to shared KMP behavior, not duplicate domain logic.
 
 ## Platform Notes
 - `kmp/core` exports the shared bridge used by Web and Apple clients.
@@ -42,5 +42,5 @@ ios/app -> SharedCore.framework from kmp/core
 
 ## Before Editing
 - Read the local module `build.gradle.kts` before changing dependencies or platform targets.
-- Check nearby README files for shell-specific setup in `web/app` and `ios/app`.
+- Check nearby README files for shell-specific setup in `web-app` and `ios/app`.
 - Do not treat `.ai/mcp/mcp.json` as module documentation; it is not the project map.

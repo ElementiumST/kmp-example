@@ -1,0 +1,12 @@
+@if (isBootstrapping()) {
+<main class="bootstrap-state">
+  <p>Инициализация shared KMP bridge...</p>
+</main>
+} @else if (bootstrapError()) {
+<main class="bootstrap-state error">
+  <h2>Ошибка инициализации web bridge</h2>
+  <p>{{ bootstrapError() }}</p>
+</main>
+} @else {
+<router-outlet></router-outlet>
+}

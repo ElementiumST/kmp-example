@@ -1,0 +1,15 @@
+{
+  "images": [
+    {
+      "filename": "shared_cont_into_add_person.pdf",
+      "idiom": "universal"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  },
+  "properties": {
+    "preserves-vector-representation": true
+  }
+}

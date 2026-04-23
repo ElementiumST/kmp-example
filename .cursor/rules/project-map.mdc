@@ -6,8 +6,8 @@ alwaysApply: true
 # Project Map
 
 - Treat `settings.gradle.kts` as the source of truth for Gradle modules.
-- The main project zones are `android/app`, `kmp/core`, `kmp/data`, `kmp/domain`, `kmp/feature/base`, `web/app`, and `ios/app`.
-- `web/app` and `ios/app` are shell layers over shared KMP logic, even though they are not Gradle modules in `settings.gradle.kts`.
+- The main project zones are `android/app`, `kmp/core`, `kmp/data`, `kmp/domain`, `kmp/feature/base`, `web-app`, and `ios/app`.
+- `web-app` and `ios/app` are shell layers over shared KMP logic, even though they are not Gradle modules in `settings.gradle.kts`.
 - Prefer the smallest zone that can solve the task before editing shared code.
 - Shared dependency direction is: `android/app -> kmp/core`, `kmp/core -> kmp/data`, `kmp/core -> kmp/domain`, `kmp/core -> kmp/feature/base`, `kmp/data -> kmp/domain`.
 - Before changing module dependencies or targets, read the local `build.gradle.kts`.

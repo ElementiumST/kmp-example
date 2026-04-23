@@ -1,0 +1,13 @@
+{
+  "/api": {
+    "target": "https://alpha.hi-tech.org",
+    "secure": true,
+    "changeOrigin": true
+  },
+  "/ws": {
+    "target": "wss://alpha.hi-tech.org",
+    "ws": true,
+    "secure": true,
+    "changeOrigin": true
+  }
+}

@@ -26,7 +26,9 @@ kotlin {
             baseName = "SharedCore"
             isStatic = true
             export(project(":kmp:feature:auth"))
+            export(project(":kmp:feature:contacts"))
             export(project(":kmp:feature:base"))
+            export(project(":kmp:domain"))
             xcf.add(this)
         }
     }
@@ -36,7 +38,9 @@ kotlin {
             baseName = "SharedCore"
             isStatic = true
             export(project(":kmp:feature:auth"))
+            export(project(":kmp:feature:contacts"))
             export(project(":kmp:feature:base"))
+            export(project(":kmp:domain"))
             xcf.add(this)
         }
     }
@@ -46,7 +50,9 @@ kotlin {
             baseName = "SharedCore"
             isStatic = true
             export(project(":kmp:feature:auth"))
+            export(project(":kmp:feature:contacts"))
             export(project(":kmp:feature:base"))
+            export(project(":kmp:domain"))
             xcf.add(this)
         }
     }
@@ -54,8 +60,9 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":kmp:data"))
-            implementation(project(":kmp:domain"))
+            api(project(":kmp:domain"))
             api(project(":kmp:feature:auth"))
+            api(project(":kmp:feature:contacts"))
             api(project(":kmp:feature:base"))
             api(libs.decompose)
             implementation(libs.koin.core)

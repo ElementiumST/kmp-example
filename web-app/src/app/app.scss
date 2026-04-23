@@ -1,0 +1,11 @@
+.bootstrap-state {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  color: #1f2937;
+}
+
+.bootstrap-state.error {
+  color: #b00020;
+  text-align: center;
+}

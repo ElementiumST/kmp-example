@@ -10,3 +10,17 @@
 /web/app/node_modules/
 /web/app/dist/shared-core/
 /web/app/public/shared-core/
+
+
+
+.nx/cache
+.nx/workspace-data
+vite.config.*.timestamp*
+.angular
+
+__screenshots__/
+
+vitest.config.*.timestamp*
+/web-app/public/shared-core/
+/dist/
+/.nx/

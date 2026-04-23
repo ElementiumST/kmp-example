@@ -1,0 +1,1 @@
+export * from './lib/data-access-kmp-bridge/data-access-kmp-bridge';

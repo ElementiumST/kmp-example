@@ -1,0 +1,115 @@
+<mxfile host="app.diagrams.net" agent="Cursor">
+  <diagram id="web-click-to-screen" name="ClickToScreenFlow">
+    <mxGraphModel dx="2213" dy="1155" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1920" pageHeight="1080" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=20;fontStyle=1;" value="Web/KMP: от клика до информации на экране" vertex="1">
+          <mxGeometry height="30" width="460" x="20" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="legend1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" value="Синий поток: пользовательское действие вниз по слоям" vertex="1">
+          <mxGeometry height="34" width="260" x="20" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="legend2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" value="Зеленый поток: данные/состояние обратно на экран" vertex="1">
+          <mxGeometry height="34" width="250" x="290" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="col1" parent="1" style="swimlane;html=1;rounded=1;whiteSpace=wrap;startSize=36;fillColor=#f8f9fa;strokeColor=#b7b7b7;fontStyle=1;" value="1. UI / Browser" vertex="1">
+          <mxGeometry height="760" width="210" x="10" y="95" as="geometry" />
+        </mxCell>
+        <mxCell id="uClick" parent="col1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;" value="Пользователь&#xa;кликает кнопку / выбирает контакт" vertex="1">
+          <mxGeometry height="70" width="170" x="20" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="uRender" parent="col1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;" value="Пользователь видит&#xa;обновленный экран / данные" vertex="1">
+          <mxGeometry height="70" width="170" x="20" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="col2" parent="1" style="swimlane;html=1;rounded=1;whiteSpace=wrap;startSize=36;fillColor=#f8f9fa;strokeColor=#b7b7b7;fontStyle=1;" value="2. Angular Feature Layer" vertex="1">
+          <mxGeometry height="760" width="220" x="290" y="95" as="geometry" />
+        </mxCell>
+        <mxCell id="aFeature" parent="col2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=13;" value="`FeatureAuth` / `FeatureContacts`&#xa;обрабатывают DOM event&#xa;(click/input/select)" vertex="1">
+          <mxGeometry height="80" width="180" x="20" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="aAppShell" parent="col2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=13;" value="`App` и `Router`&#xa;реагируют на `rootChildKind` / `contactsChildKind`&#xa;и выбирают маршрут/экран" vertex="1">
+          <mxGeometry height="100" width="180" x="20" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="col3" parent="1" style="swimlane;html=1;rounded=1;whiteSpace=wrap;startSize=36;fillColor=#f8f9fa;strokeColor=#b7b7b7;fontStyle=1;" value="3. Angular Bridge Facade" vertex="1">
+          <mxGeometry height="760" width="230" x="570" y="95" as="geometry" />
+        </mxCell>
+        <mxCell id="bCall" parent="col3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;" value="`KmpBridgeService`&#xa;вызывает метод bridge&#xa;например: `authSubmit()` / `contactsOpenInfo()`" vertex="1">
+          <mxGeometry height="90" width="190" x="20" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="bWatch" parent="col3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;" value="`watch*` + `parseJson()` + `signal.set()`&#xa;обновляют `authState`, `contactsListState`,&#xa;`contactInfoState`, `contactEditorState`" vertex="1">
+          <mxGeometry height="110" width="190" x="20" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="col4" parent="1" style="swimlane;html=1;rounded=1;whiteSpace=wrap;startSize=36;fillColor=#f8f9fa;strokeColor=#b7b7b7;fontStyle=1;" value="4. KMP Web Bridge (JS)" vertex="1">
+          <mxGeometry height="760" width="230" x="890" y="95" as="geometry" />
+        </mxCell>
+        <mxCell id="cBridge" parent="col4" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;" value="`WebRootBridge`&#xa;переводит вызов TS → Kotlin&#xa;и дергает `AuthComponent` / `ContactsComponent`" vertex="1">
+          <mxGeometry height="95" width="190" x="20" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="cJson" parent="col4" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;" value="`WebRootBridge`&#xa;читает `currentState()` / `watchState()`&#xa;и сериализует состояние в JSON" vertex="1">
+          <mxGeometry height="95" width="190" x="20" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="col5" parent="1" style="swimlane;html=1;rounded=1;whiteSpace=wrap;startSize=36;fillColor=#f8f9fa;strokeColor=#b7b7b7;fontStyle=1;" value="5. Shared KMP Logic" vertex="1">
+          <mxGeometry height="760" width="250" x="1210" y="95" as="geometry" />
+        </mxCell>
+        <mxCell id="dComponents" parent="col5" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;" value="`RootComponent` → `AuthComponent` / `ContactsComponent`&#xa;принимают action и меняют child stack/state" vertex="1">
+          <mxGeometry height="90" width="200" x="25" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="dDomain" parent="col5" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=13;" value="UseCase / state flow / navigation&#xa;например `LoginUseCase`, `GetContactsUseCase`,&#xa;`CreateNoteContactUseCase`" vertex="1">
+          <mxGeometry height="95" width="200" x="25" y="220" as="geometry" />
+        </mxCell>
+        <mxCell id="dState" parent="col5" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;" value="Новый `StateFlow` / `watchState()`&#xa;эмитит актуальное состояние экрана" vertex="1">
+          <mxGeometry height="80" width="200" x="25" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="col6" parent="1" style="swimlane;html=1;rounded=1;whiteSpace=wrap;startSize=36;fillColor=#f8f9fa;strokeColor=#b7b7b7;fontStyle=1;" value="6. Data / Backend" vertex="1">
+          <mxGeometry height="760" width="240" x="1540" y="95" as="geometry" />
+        </mxCell>
+        <mxCell id="eData" parent="col6" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;" value="Repository / Remote / DB&#xa;`Ktor` REST + WS, `SQLDelight`, storage" vertex="1">
+          <mxGeometry height="90" width="200" x="20" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="eResult" parent="col6" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;" value="Backend / local source&#xa;возвращает данные / ошибку / событие" vertex="1">
+          <mxGeometry height="80" width="200" x="20" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="note" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff;strokeColor=#999999;dashed=1;fontSize=12;" value="Примеры команд вниз по слоям:&#xa;• login: `submit()` → `authSubmit()` → `AuthComponent.submit()`&#xa;• contacts: open info / create / edit / invite&#xa;&#xa;Обратный поток всегда один: KMP state → JSON bridge → Angular signals → template" vertex="1">
+          <mxGeometry height="92" width="720" x="20" y="870" as="geometry" />
+        </mxCell>
+        <mxCell id="f1" edge="1" parent="1" source="uClick" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;strokeWidth=2;fontSize=12;" target="aFeature" value="1. UI event">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f2" edge="1" parent="1" source="aFeature" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;strokeWidth=2;fontSize=12;" target="bCall" value="2. handler">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f3" edge="1" parent="1" source="bCall" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;strokeWidth=2;fontSize=12;" target="cBridge" value="3. service call">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f4" edge="1" parent="1" source="cBridge" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;strokeWidth=2;fontSize=12;" target="dComponents" value="4. action into KMP">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f5" edge="1" parent="1" source="dComponents" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;strokeWidth=2;fontSize=12;" target="dDomain" value="5. use case / repo">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f6" edge="1" parent="1" source="dDomain" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;strokeWidth=2;fontSize=12;" target="eData" value="6. fetch / persist">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r1" edge="1" parent="1" source="eResult" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#82b366;strokeWidth=2;fontSize=12;" target="dState" value="7. result / event">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r2" edge="1" parent="1" source="dState" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#82b366;strokeWidth=2;fontSize=12;" target="cJson" value="8. state update">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r3" edge="1" parent="1" source="cJson" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#82b366;strokeWidth=2;fontSize=12;" target="bWatch" value="9. watch* / JSON">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r4" edge="1" parent="1" source="bWatch" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#82b366;strokeWidth=2;fontSize=12;" target="aAppShell" value="10. signals / route">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r5" edge="1" parent="1" source="aAppShell" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#82b366;strokeWidth=2;fontSize=12;" target="uRender" value="11. template render">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="dataReturnHint" edge="1" parent="1" source="eData" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;strokeColor=#82b366;" target="eResult" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,60 @@
+@let listQuery = query();
+@let listItems = items();
+@let listHasItems = hasItems();
+@let listIsInitialLoading = isInitialLoading();
+@let listError = errorMessage();
+@let listSnackbar = snackbarMessage();
+@let listCanLoadMore = canLoadMore();
+@let overlayVisible = isAddOverlayVisible();
+
+<header class="header">
+  <h1>Контакты</h1>
+  <button type="button" (click)="refresh()">Обновить</button>
+</header>
+
+<section class="toolbar">
+  <input
+    type="text"
+    placeholder="Поиск"
+    [value]="listQuery"
+    (input)="onQueryInput(($any($event.target).value ?? '').toString())"
+  />
+  <button type="button" (click)="openAddOverlay()">Добавить</button>
+</section>
+
+@if (listError) {
+  <p class="error">{{ listError }}</p>
+}
+
+@if (listSnackbar) {
+  <p class="hint">{{ listSnackbar }}</p>
+}
+
+@if (listIsInitialLoading) {
+  <p>Загрузка контактов...</p>
+} @else if (!listHasItems) {
+  <p class="hint">Пока нет контактов. Нажмите «Добавить».</p>
+} @else {
+  <ul class="list">
+    @for (contact of listItems; track trackContact($index, contact)) {
+      <li class="row">
+        <button class="row__open" type="button" (click)="openInfo($index)">
+          <strong>{{ contact.name || '(без имени)' }}</strong>
+          <span>{{ contact.email || contact.phone || contact.profileId }}</span>
+        </button>
+        <div class="row__actions">
+          <button type="button" (click)="openEdit($index)">Изменить</button>
+          <button type="button" (click)="deleteFromMenu($index)">Удалить</button>
+        </div>
+      </li>
+    }
+  </ul>
+}
+
+@if (listCanLoadMore) {
+  <button type="button" (click)="loadMore()">Загрузить еще</button>
+}
+
+@if (overlayVisible) {
+  <lib-contact-add-overlay class="overlay"></lib-contact-add-overlay>
+}

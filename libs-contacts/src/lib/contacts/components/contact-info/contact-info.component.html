@@ -1,0 +1,50 @@
+@let contactInfo = contact();
+@let errorMsg = errorMessage();
+@let snackbarMsg = snackbarMessage();
+@let extraExpanded = isExtraExpanded();
+
+<header class="header">
+  <button type="button" (click)="back()">Назад</button>
+  <h1>{{ title() }}</h1>
+</header>
+
+@if (errorMsg) {
+  <p class="error">{{ errorMsg }}</p>
+}
+
+@if (snackbarMsg) {
+  <p class="hint">{{ snackbarMsg }}</p>
+}
+
+<section class="card">
+  <p><strong>Email:</strong> {{ contactInfo.email || '—' }}</p>
+  <p><strong>Телефон:</strong> {{ contactInfo.phone || '—' }}</p>
+  <p><strong>Комментарий:</strong> {{ contactInfo.note || '—' }}</p>
+
+  @if (extraExpanded) {
+    <p><strong>О себе:</strong> {{ contactInfo.aboutSelf || '—' }}</p>
+    <p><strong>Доп. контакт:</strong> {{ contactInfo.additionalContact || '—' }}</p>
+  }
+
+  <button type="button" (click)="toggleExtra()">
+    {{ extraToggleLabel() }}
+  </button>
+</section>
+
+<section class="actions">
+  <button type="button" (click)="edit()">Редактировать</button>
+
+  @if (isCallButtonsVisible()) {
+    <button type="button" (click)="audioCall()">Аудио</button>
+    <button type="button" (click)="videoCall()">Видео</button>
+    <button type="button" (click)="writeMessage()">Сообщение</button>
+  }
+
+  @if (isAddToContactsVisible()) {
+    <button type="button" (click)="invite()">{{ inviteLabel() }}</button>
+  }
+
+  @if (isDeleteVisible()) {
+    <button type="button" (click)="delete()">{{ deleteLabel() }}</button>
+  }
+</section>

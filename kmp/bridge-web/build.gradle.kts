@@ -35,6 +35,17 @@ dependencies {
     add("kspCommonMainMetadata", project(":kmp:tools:bridge-codegen"))
 }
 
+val syncBridgeTs by tasks.registering(Sync::class) {
+    dependsOn("kspCommonMainKotlinMetadata")
+    from(layout.buildDirectory.dir("generated/ksp/metadata/commonMain/resources/bridge/ts"))
+    into(rootProject.layout.projectDirectory.dir("libs/src/lib/data-access-kmp-bridge/generated"))
+    include("**/*.ts")
+}
+
+tasks.named("jsBrowserDevelopmentLibraryDistribution") {
+    dependsOn(syncBridgeTs)
+}
+
 android {
     namespace = "com.example.kmpexample.kmp.bridge.web"
     compileSdk = 35

@@ -28,6 +28,7 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             api(libs.decompose)
             implementation(libs.kotlinx.serialization.json)
+            implementation(project(":kmp:tools:bridge-annotations"))
         }
     }
 }

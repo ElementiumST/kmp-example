@@ -1,7 +1,9 @@
 package com.example.kmpexample.kmp.feature.contacts.model
 
 import com.example.kmpexample.kmp.domain.model.Interlocutor
+import com.example.kmpexample.kmp.tools.bridge.annotations.BridgeModel
 
+@BridgeModel
 data class ContactAddOverlayState(
     val query: String = "",
     val items: List<Interlocutor> = emptyList(),

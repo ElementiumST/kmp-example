@@ -2,7 +2,9 @@ package com.example.kmpexample.kmp.feature.contacts.model
 
 import com.example.kmpexample.kmp.domain.model.Contact
 import com.example.kmpexample.kmp.domain.model.ContactPresence
+import com.example.kmpexample.kmp.tools.bridge.annotations.BridgeModel
 
+@BridgeModel
 data class ContactsListState(
     val query: String = "",
     val items: List<Contact> = emptyList(),

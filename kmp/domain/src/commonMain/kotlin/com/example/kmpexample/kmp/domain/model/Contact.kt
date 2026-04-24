@@ -1,11 +1,14 @@
 package com.example.kmpexample.kmp.domain.model
 
+import com.example.kmpexample.kmp.tools.bridge.annotations.BridgeModel
+
 /**
  * Domain-level representation of a contact.
  *
  * A contact may be either a platform user (`interlocutorType != "NOTE_CONTACT"`, has a `profileId`)
  * or a personal note record (`isNote == true`, no profile/presence).
  */
+@BridgeModel(name = "ContactItem")
 data class Contact(
     val contactId: String,
     val profileId: String,

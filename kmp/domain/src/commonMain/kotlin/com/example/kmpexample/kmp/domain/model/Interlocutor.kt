@@ -1,8 +1,11 @@
 package com.example.kmpexample.kmp.domain.model
 
+import com.example.kmpexample.kmp.tools.bridge.annotations.BridgeModel
+
 /**
  * Result row of the interlocutors search (people to add as contacts).
  */
+@BridgeModel(name = "InterlocutorItem")
 data class Interlocutor(
     val profileId: String,
     val contactId: String,

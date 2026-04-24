@@ -1,11 +1,14 @@
 package com.example.kmpexample.kmp.domain.model
 
+import com.example.kmpexample.kmp.tools.bridge.annotations.BridgeModel
+
 enum class ContactFieldError {
     EMPTY,
     TOO_LONG,
     INVALID_FORMAT,
 }
 
+@BridgeModel
 data class ContactValidation(
     val name: ContactFieldError? = null,
     val email: ContactFieldError? = null,

@@ -6,10 +6,14 @@ import com.example.kmpexample.kmp.core.app.SharedAppConfig
 import com.example.kmpexample.kmp.core.component.RootComponent
 import com.example.kmpexample.kmp.data.config.NetworkConfig
 import com.example.kmpexample.kmp.feature.auth.component.AuthComponent
+import com.example.kmpexample.kmp.feature.auth.model.AuthScreenState
 import com.example.kmpexample.kmp.feature.base.StateSubscription
 import com.example.kmpexample.kmp.feature.contacts.component.ContactEditorComponent
 import com.example.kmpexample.kmp.feature.contacts.component.ContactInfoComponent
 import com.example.kmpexample.kmp.feature.contacts.component.ContactsComponent
+import com.example.kmpexample.kmp.feature.contacts.model.ContactEditorState
+import com.example.kmpexample.kmp.feature.contacts.model.ContactInfoState
+import com.example.kmpexample.kmp.feature.contacts.model.ContactsListState
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
@@ -18,6 +22,10 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import com.example.kmpexample.kmp.tools.bridge.annotations.BridgeAction
+import com.example.kmpexample.kmp.tools.bridge.annotations.BridgeActionRole
+import com.example.kmpexample.kmp.tools.bridge.annotations.BridgeStringUnion
+import com.example.kmpexample.kmp.tools.bridge.annotations.ExposeToWeb
 import kotlin.js.ExperimentalJsExport
 import kotlin.js.JsExport
 
@@ -36,6 +44,7 @@ object WebBridgeFactory {
 
 @OptIn(ExperimentalJsExport::class)
 @JsExport
+@ExposeToWeb(name = "WebRootBridge")
 class WebRootBridge private constructor() {
     private lateinit var rootComponent: RootComponent
 
@@ -43,17 +52,22 @@ class WebRootBridge private constructor() {
         this.rootComponent = rootComponent
     }
 
+    @BridgeAction(role = BridgeActionRole.KIND, name = "currentRootChildKind")
+    @BridgeStringUnion(name = "RootChildKind", values = ["AUTH", "CONTACTS_LIST", "CONTACT_INFO", "CONTACT_CREATE", "CONTACT_EDIT"])
     fun currentRootChildKind(): String = rootComponent.currentRootChildKindString()
 
+    @BridgeAction(role = BridgeActionRole.WATCH_KIND, name = "watchRootChildKind")
     fun watchRootChildKind(observer: (String) -> Unit): StateSubscription {
         return rootComponent.watchRootChildKindString(observer)
     }
 
+    @BridgeAction(role = BridgeActionRole.STATE_JSON, stateModel = AuthScreenState::class, name = "authStateJson")
     fun authStateJson(): String = authComponentOrNull()
         ?.currentState()
         ?.toAuthStateJson()
         ?: "{}"
 
+    @BridgeAction(role = BridgeActionRole.WATCH_STATE, stateModel = AuthScreenState::class, name = "watchAuthState")
     fun watchAuthState(observer: (String) -> Unit): StateSubscription {
         val component = authComponentOrNull() ?: return StateSubscription {}
         return component.watchState { state ->
@@ -61,30 +75,38 @@ class WebRootBridge private constructor() {
         }
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "authUpdateLogin")
     fun authUpdateLogin(value: String) {
         authComponentOrNull()?.updateLogin(value)
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "authUpdatePassword")
     fun authUpdatePassword(value: String) {
         authComponentOrNull()?.updatePassword(value)
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "authSubmit")
     fun authSubmit() {
         authComponentOrNull()?.submit()
     }
 
+    @BridgeAction(role = BridgeActionRole.KIND, name = "contactsChildKind")
+    @BridgeStringUnion(name = "ContactsChildKind", values = ["LIST", "INFO", "CREATE", "EDIT"])
     fun contactsChildKind(): String = contactsComponentOrNull()?.currentContactsChildKindString() ?: "LIST"
 
+    @BridgeAction(role = BridgeActionRole.WATCH_KIND, name = "watchContactsChildKind")
     fun watchContactsChildKind(observer: (String) -> Unit): StateSubscription {
         val component = contactsComponentOrNull() ?: return StateSubscription {}
         return component.watchContactsChildKindString(observer)
     }
 
+    @BridgeAction(role = BridgeActionRole.STATE_JSON, stateModel = ContactsListState::class, name = "contactsListStateJson")
     fun contactsListStateJson(): String = contactsComponentOrNull()
         ?.currentState()
         ?.toContactsListJson()
         ?: "{}"
 
+    @BridgeAction(role = BridgeActionRole.WATCH_STATE, stateModel = ContactsListState::class, name = "watchContactsListState")
     fun watchContactsListState(observer: (String) -> Unit): StateSubscription {
         val component = contactsComponentOrNull() ?: return StateSubscription {}
         return component.watchState { state ->
@@ -92,59 +114,73 @@ class WebRootBridge private constructor() {
         }
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactsRefresh")
     fun contactsRefresh() {
         contactsComponentOrNull()?.refresh()
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactsLoadMore")
     fun contactsLoadMore() {
         contactsComponentOrNull()?.loadMore()
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactsUpdateQuery")
     fun contactsUpdateQuery(value: String) {
         contactsComponentOrNull()?.updateQuery(value)
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactsOpenInfo")
     fun contactsOpenInfo(contactIndex: Int) {
         contactsComponentOrNull()?.openInfo(contactIndex)
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactsOpenAddOverlay")
     fun contactsOpenAddOverlay() {
         contactsComponentOrNull()?.openAddOverlay()
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactsCloseAddOverlay")
     fun contactsCloseAddOverlay() {
         contactsComponentOrNull()?.closeAddOverlay()
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactsOpenCreate")
     fun contactsOpenCreate() {
         contactsComponentOrNull()?.openCreate()
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactsOpenEdit")
     fun contactsOpenEdit(contactIndex: Int) {
         contactsComponentOrNull()?.openEdit(contactIndex)
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactsDeleteFromMenu")
     fun contactsDeleteFromMenu(contactIndex: Int) {
         contactsComponentOrNull()?.deleteFromMenu(contactIndex)
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactsUpdateAddOverlayQuery")
     fun contactsUpdateAddOverlayQuery(value: String) {
         contactsComponentOrNull()?.updateAddOverlayQuery(value)
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactsLoadMoreAddOverlay")
     fun contactsLoadMoreAddOverlay() {
         contactsComponentOrNull()?.loadMoreAddOverlay()
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactsInviteInterlocutor")
     fun contactsInviteInterlocutor(profileId: String) {
         contactsComponentOrNull()?.inviteInterlocutor(profileId)
     }
 
+    @BridgeAction(role = BridgeActionRole.STATE_JSON, stateModel = ContactInfoState::class, nullableOnEmpty = true, name = "contactInfoStateJson")
     fun contactInfoStateJson(): String = infoComponentOrNull()
         ?.currentState()
         ?.toContactInfoJson()
         ?: "{}"
 
+    @BridgeAction(role = BridgeActionRole.WATCH_STATE, stateModel = ContactInfoState::class, nullableOnEmpty = true, name = "watchContactInfoState")
     fun watchContactInfoState(observer: (String) -> Unit): StateSubscription {
         val component = infoComponentOrNull() ?: return StateSubscription {}
         return component.watchState { state ->
@@ -152,43 +188,53 @@ class WebRootBridge private constructor() {
         }
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactInfoBack")
     fun contactInfoBack() {
         infoComponentOrNull()?.back()
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactInfoEdit")
     fun contactInfoEdit() {
         infoComponentOrNull()?.edit()
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactInfoDelete")
     fun contactInfoDelete() {
         infoComponentOrNull()?.delete()
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactInfoInvite")
     fun contactInfoInvite() {
         infoComponentOrNull()?.invite()
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactInfoToggleExtra")
     fun contactInfoToggleExtra() {
         infoComponentOrNull()?.toggleExtra()
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactInfoWriteMessage")
     fun contactInfoWriteMessage() {
         infoComponentOrNull()?.writeMessage()
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactInfoAudioCall")
     fun contactInfoAudioCall() {
         infoComponentOrNull()?.audioCall()
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactInfoVideoCall")
     fun contactInfoVideoCall() {
         infoComponentOrNull()?.videoCall()
     }
 
+    @BridgeAction(role = BridgeActionRole.STATE_JSON, stateModel = ContactEditorState::class, nullableOnEmpty = true, name = "contactEditorStateJson")
     fun contactEditorStateJson(): String = activeEditorComponentOrNull()
         ?.currentState()
         ?.toContactEditorJson()
         ?: "{}"
 
+    @BridgeAction(role = BridgeActionRole.WATCH_STATE, stateModel = ContactEditorState::class, nullableOnEmpty = true, name = "watchContactEditorState")
     fun watchContactEditorState(observer: (String) -> Unit): StateSubscription {
         val component = activeEditorComponentOrNull() ?: return StateSubscription {}
         return component.watchState { state ->
@@ -196,42 +242,52 @@ class WebRootBridge private constructor() {
         }
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactEditorUpdateName")
     fun contactEditorUpdateName(value: String) {
         activeEditorComponentOrNull()?.updateName(value)
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactEditorUpdateEmail")
     fun contactEditorUpdateEmail(value: String) {
         activeEditorComponentOrNull()?.updateEmail(value)
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactEditorUpdatePhone")
     fun contactEditorUpdatePhone(value: String) {
         activeEditorComponentOrNull()?.updatePhone(value)
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactEditorUpdateNote")
     fun contactEditorUpdateNote(value: String) {
         activeEditorComponentOrNull()?.updateNote(value)
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactEditorUpdateTags")
     fun contactEditorUpdateTags(value: String) {
         activeEditorComponentOrNull()?.updateTags(value)
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactEditorSave")
     fun contactEditorSave() {
         activeEditorComponentOrNull()?.save()
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactEditorBack")
     fun contactEditorBack() {
         activeEditorComponentOrNull()?.back()
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactEditorConfirmLeave")
     fun contactEditorConfirmLeave() {
         activeEditorComponentOrNull()?.confirmLeave()
     }
 
+    @BridgeAction(role = BridgeActionRole.INTENT, name = "contactEditorCancelLeave")
     fun contactEditorCancelLeave() {
         activeEditorComponentOrNull()?.cancelLeave()
     }
 
+    @BridgeAction(role = BridgeActionRole.DESTROY, name = "destroy")
     fun destroy() {
         rootComponent.destroy()
     }

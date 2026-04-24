@@ -1,8 +1,10 @@
 package com.example.kmpexample.kmp.feature.contacts.model
 
 import com.example.kmpexample.kmp.domain.model.Contact
+import com.example.kmpexample.kmp.tools.bridge.annotations.BridgeModel
 import com.example.kmpexample.kmp.tools.mvi.annotations.GenerateMviActionWrappers
 
+@BridgeModel
 data class ContactInfoState(
     val contact: Contact,
     val isExtraExpanded: Boolean = false,

@@ -2,10 +2,12 @@ package com.example.kmpexample.kmp.feature.contacts.model
 
 import com.example.kmpexample.kmp.domain.model.ContactDraft
 import com.example.kmpexample.kmp.domain.model.ContactValidation
+import com.example.kmpexample.kmp.tools.bridge.annotations.BridgeModel
 import com.example.kmpexample.kmp.tools.mvi.annotations.GenerateMviActionWrappers
 
 enum class ContactEditorMode { CREATE, EDIT }
 
+@BridgeModel
 data class ContactEditorState(
     val mode: ContactEditorMode,
     val isNote: Boolean,

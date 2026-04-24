@@ -1,1 +1,1 @@
-export * from './lib/feature-contacts/feature-contacts';
+export * from './lib/contacts';

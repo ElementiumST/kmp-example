@@ -1,0 +1,40 @@
+@let overlayQuery = query();
+@let overlayItems = items();
+@let overlayError = errorMessage();
+@let overlayCanLoadMore = canLoadMore();
+
+<header class="overlay__header">
+  <h2>Добавить контакт</h2>
+  <button type="button" (click)="close()">Закрыть</button>
+</header>
+
+<input
+  type="text"
+  placeholder="Поиск собеседников"
+  [value]="overlayQuery"
+  (input)="onQueryInput(($any($event.target).value ?? '').toString())"
+/>
+
+<button type="button" (click)="createNote()">Создать заметку</button>
+
+@if (overlayError) {
+  <p class="error">{{ overlayError }}</p>
+}
+
+<ul class="list">
+  @for (item of overlayItems; track trackInterlocutor($index, item)) {
+    <li class="row">
+      <div class="row__content">
+        <strong>{{ item.name || item.profileId }}</strong>
+        <span>{{ item.email || item.phone }}</span>
+      </div>
+      <button type="button" (click)="invite(item.profileId)">
+        {{ inviteLabel(item) }}
+      </button>
+    </li>
+  }
+</ul>
+
+@if (overlayCanLoadMore) {
+  <button type="button" (click)="loadMore()">Загрузить еще</button>
+}

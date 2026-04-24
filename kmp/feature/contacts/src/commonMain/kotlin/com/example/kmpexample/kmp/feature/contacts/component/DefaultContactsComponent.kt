@@ -9,7 +9,6 @@ import com.arkivanov.decompose.router.stack.pop
 import com.arkivanov.decompose.router.stack.push
 import com.arkivanov.decompose.router.stack.replaceCurrent
 import com.arkivanov.decompose.value.Value
-import com.arkivanov.decompose.value.subscribe
 import com.example.kmpexample.kmp.domain.model.Contact
 import com.example.kmpexample.kmp.domain.model.ContactDraft
 import com.example.kmpexample.kmp.domain.model.ContactEvent
@@ -23,7 +22,9 @@ import com.example.kmpexample.kmp.domain.usecase.GetContactsUseCase
 import com.example.kmpexample.kmp.domain.usecase.InviteContactUseCase
 import com.example.kmpexample.kmp.domain.usecase.ObserveContactEventsUseCase
 import com.example.kmpexample.kmp.domain.usecase.UpdateContactUseCase
-import com.example.kmpexample.kmp.feature.base.BaseMviComponent
+import com.example.kmpexample.kmp.feature.base.FeatureStoreComponent
+import com.example.kmpexample.kmp.feature.base.LoggingPlugin
+import com.example.kmpexample.kmp.feature.base.RecoverPlugin
 import com.example.kmpexample.kmp.feature.contacts.model.ContactAddOverlayState
 import com.example.kmpexample.kmp.feature.contacts.model.ContactEditorMode
 import com.example.kmpexample.kmp.feature.contacts.model.ContactsListAction
@@ -49,9 +50,20 @@ class DefaultContactsComponent(
     private val findContactsPresencesUseCase: FindContactsPresencesUseCase,
     private val observeContactEventsUseCase: ObserveContactEventsUseCase,
     private val coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
-) : BaseMviComponent<ContactsListState, ContactsListAction>(
+) : FeatureStoreComponent<ContactsListState, ContactsListAction>(
     initialState = ContactsListState(isLoading = true),
     coroutineScope = coroutineScope,
+    plugins = listOf(
+        LoggingPlugin(logger = { println("[contacts] $it") }),
+        RecoverPlugin { throwable, state ->
+            state.copy(
+                isLoading = false,
+                isLoadingMore = false,
+                isRefreshing = false,
+                errorMessage = throwable.message ?: "Unexpected contacts error",
+            )
+        },
+    ),
 ),
     ContactsComponent,
     ComponentContext by componentContext {
@@ -77,42 +89,8 @@ class DefaultContactsComponent(
         observeEvents()
     }
 
-    override fun currentChildKind(): ContactsChildKind {
-        return when (childStack.value.active.instance) {
-            ContactsComponent.Child.List -> ContactsChildKind.LIST
-            is ContactsComponent.Child.Info -> ContactsChildKind.INFO
-            is ContactsComponent.Child.Create -> ContactsChildKind.CREATE
-            is ContactsComponent.Child.Edit -> ContactsChildKind.EDIT
-        }
-    }
-
-    override fun watchChildKind(observer: (ContactsChildKind) -> Unit): com.example.kmpexample.kmp.feature.base.StateSubscription {
-        observer(currentChildKind())
-        val cancellation = childStack.subscribe { stack ->
-            val kind = when (stack.active.instance) {
-                ContactsComponent.Child.List -> ContactsChildKind.LIST
-                is ContactsComponent.Child.Info -> ContactsChildKind.INFO
-                is ContactsComponent.Child.Create -> ContactsChildKind.CREATE
-                is ContactsComponent.Child.Edit -> ContactsChildKind.EDIT
-            }
-            observer(kind)
-        }
-        return com.example.kmpexample.kmp.feature.base.StateSubscription { cancellation.cancel() }
-    }
-
-    override fun currentInfoComponentOrNull(): ContactInfoComponent? {
-        return (childStack.value.active.instance as? ContactsComponent.Child.Info)?.component
-    }
-
-    override fun currentCreateComponentOrNull(): ContactEditorComponent? {
-        return (childStack.value.active.instance as? ContactsComponent.Child.Create)?.component
-    }
-
-    override fun currentEditComponentOrNull(): ContactEditorComponent? {
-        return (childStack.value.active.instance as? ContactsComponent.Child.Edit)?.component
-    }
-
     override fun onAction(action: ContactsListAction) {
+        publishAction(action)
         when (action) {
             ContactsListAction.Refresh -> loadInitial()
             ContactsListAction.LoadMore -> loadNextPage()
@@ -172,8 +150,8 @@ class DefaultContactsComponent(
                 createNoteContactUseCase = createNoteContactUseCase,
                 updateContactUseCase = null,
                 onBack = { navigation.pop() },
-                onSaved = { contact ->
-                    insertOrUpdateContactLocally(contact)
+                onSaved = { contact, _ ->
+                    if (contact != null) insertOrUpdateContactLocally(contact)
                     navigation.pop()
                 },
             ),
@@ -197,9 +175,22 @@ class DefaultContactsComponent(
                     createNoteContactUseCase = null,
                     updateContactUseCase = updateContactUseCase,
                     onBack = { navigation.pop() },
-                    onSaved = { updated ->
-                        insertOrUpdateContactLocally(updated)
-                        navigation.replaceCurrent(ChildConfig.Info(contactIndex = indexOfContact(updated), contactId = updated.contactId))
+                    onSaved = { updated, savedDraft ->
+                        val resolved = updated ?: contact.copy(
+                            name = if (contact.isNote) savedDraft.name else contact.name,
+                            email = if (contact.isNote) savedDraft.email else contact.email,
+                            phone = if (contact.isNote) savedDraft.phone else contact.phone,
+                            note = savedDraft.note,
+                            tags = savedDraft.tags(),
+                        )
+                        insertOrUpdateContactLocally(resolved)
+                        val resolvedIndex = indexOfContact(resolved)
+                        navigation.replaceCurrent(
+                            ChildConfig.Info(
+                                contactIndex = if (resolvedIndex >= 0) resolvedIndex else config.contactIndex,
+                                contactId = resolved.contactId.ifEmpty { config.contactId },
+                            ),
+                        )
                     },
                 ),
             )
@@ -215,7 +206,7 @@ class DefaultContactsComponent(
                 errorMessage = null,
             )
         }
-        coroutineScope.launch {
+        launchSafely {
             runCatching { getContactsUseCase(query, 0, pageLimit) }
                 .onSuccess { page ->
                     mutableState.set {
@@ -245,7 +236,7 @@ class DefaultContactsComponent(
         val current = mutableState.value
         if (current.isLoading || current.isLoadingMore || !current.hasMore) return
         mutableState.set { it.copy(isLoadingMore = true, errorMessage = null) }
-        coroutineScope.launch {
+        launchSafely {
             runCatching { getContactsUseCase(current.query, current.items.size, pageLimit) }
                 .onSuccess { page ->
                     mutableState.set {
@@ -308,7 +299,7 @@ class DefaultContactsComponent(
         val contact = currentState().items.getOrNull(contactIndex) ?: return
         if (contact.contactId.isEmpty()) return
         mutableState.set { it.copy(contextMenuContactIndex = -1) }
-        coroutineScope.launch {
+        launchSafely {
             runCatching { deleteContactUseCase(contact.contactId) }
                 .onSuccess { removeContactLocally(contact.contactId) }
                 .onFailure { throwable ->
@@ -412,7 +403,7 @@ class DefaultContactsComponent(
                 ),
             )
         }
-        coroutineScope.launch {
+        launchSafely {
             runCatching { inviteContactUseCase(profileId) }
                 .onSuccess {
                     mutableState.set { state ->
@@ -456,7 +447,7 @@ class DefaultContactsComponent(
             .distinct()
         if (profileIds.isEmpty()) return
 
-        coroutineScope.launch {
+        launchSafely {
             runCatching { findContactsPresencesUseCase(profileIds) }
                 .onSuccess { presenceMap ->
                     if (presenceMap.isEmpty()) return@onSuccess
@@ -468,7 +459,7 @@ class DefaultContactsComponent(
     }
 
     private fun observeEvents() {
-        coroutineScope.launch {
+        launchSafely {
             observeContactEventsUseCase().collect { event ->
                 when (event) {
                     is ContactEvent.Changed -> mutableState.set { state ->

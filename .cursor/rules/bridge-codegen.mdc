@@ -1,0 +1,36 @@
+---
+description: Bridge code generation and annotations guidance
+globs: kmp/**/*
+alwaysApply: false
+---
+
+# Bridge Codegen Rules
+
+## Golden rule
+
+Bridge-specific code does **not** live in multiplatform interfaces. Shared components (`RootComponent`, `ContactsComponent`, `AuthComponent`, etc.) must not contain:
+
+- Pattern-matching accessors such as `currentAuthComponentOrNull()`, `currentInfoComponentOrNull()`, etc.
+- Stringly-typed navigation helpers such as `currentChildKind()` / `watchChildKind()`.
+- Bridge annotations (`@ExposeToWeb`, `@BridgeAction`, `@BridgeChild`).
+
+Such helpers belong to bridge modules only:
+
+- `kmp/bridge-web` — Web-facing bridge with `@JsExport` surface.
+- `kmp/bridge-apple` — Apple-facing accessors (`AppleRootAccessor`, `AppleContactsAccessor`).
+
+## Annotations
+
+- `kmp/tools/bridge-annotations` hosts the annotation contract.
+- `kmp/tools/bridge-codegen` hosts the KSP processor.
+- Annotations may be placed only on bridge-module sources — not on shared feature interfaces.
+- Do not add `implementation(project(":kmp:tools:bridge-annotations"))` to feature modules.
+
+## Adding a new platform accessor
+
+1. Identify the shared `Value<ChildStack<*, Child>>` you need to read.
+2. Add an extension / method inside the relevant bridge module:
+   - Web → `kmp/bridge-web` (touched from `WebRootBridge`).
+   - Apple → `kmp/bridge-apple/AppleRootAccessor.kt` or `AppleContactsAccessor.kt`.
+3. Do **not** introduce a new method on the shared interface just to make the bridge easier.
+4. Types exposed to JS/TypeScript go through `libs/src/lib/data-access-kmp-bridge/generated/bridge-types.ts`. Keep them string-union or flat DTO.

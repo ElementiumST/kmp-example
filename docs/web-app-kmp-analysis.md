@@ -2,396 +2,174 @@
 
 ## Что это за связка
 
-В этом проекте `web-app` выступает как web-shell над shared-логикой из `kmp/core`.
-Angular не содержит основную бизнес-логику приложения, а:
+`web-app` — это Angular-оболочка над общей KMP-логикой. Бизнес-правила, состояние экранов и навигационное дерево живут в KMP, а web-слой отвечает за запуск, отображение UI и проксирование пользовательских действий.
 
-- поднимает собственное приложение;
-- динамически загружает JS-артефакт, собранный из `kmp/core`;
-- получает exported bridge через `WebBridgeFactory`;
-- подписывается на shared state;
-- проксирует пользовательские действия обратно в KMP.
+Но важна актуальная граница модулей:
 
-Ключевая цепочка выглядит так:
+- bundle для web-оболочки собирается из `kmp/bridge-web`
+- generated route table и TS-определения тоже приходят из `kmp/bridge-web`
+- рантайм-реализация `WebBridgeFactory` и `WebRootBridge` находится в `kmp/core`
 
-`web-app` -> `data-access-kmp-bridge.ts` -> `WebBridgeFactory` -> `WebRootBridge` -> `RootComponent` -> shared feature components / use cases / data layer.
+То есть для web правильнее думать так:
 
-## Где проходит интеграция
+`web-app` -> `kmp/bridge-web` как точка входа для дистрибутива -> `kmp/core` как место, где живёт основной bridge-рантайм
 
-Основные точки интеграции:
+## Актуальная цепочка интеграции
 
-- `web-app/scripts/sync-shared-core.mjs`  
-  Скрипт вызывает Gradle target `:kmp:core:jsBrowserDevelopmentLibraryDistribution`, копирует JS output в `web-app/public/shared-core` и генерирует `manifest.json`.
+Поток интеграции выглядит так:
 
-- `kmp/core/build.gradle.kts`  
-  Включает `js(IR)`, `browser()`, `binaries.library()` и `generateTypeScriptDefinitions()`. Это означает, что `kmp/core` собирается как JS library для web-shell.
+`web-app` -> `sync-shared-core.mjs` -> `web-app/public/shared-core` -> `KmpBridgeService` -> `WebBridgeFactory` -> `WebRootBridge` -> `RootComponent` -> общие feature-компоненты / use case'ы / data-слой
 
-- `libs/src/lib/data-access-kmp-bridge/data-access-kmp-bridge.ts`  
-  Главный мост со стороны TypeScript. Он:
-  - загружает скрипты из `manifest.json`;
-  - достает KMP module из `globalThis['kmp-example.kmp:core']`;
-  - находит `WebBridgeFactory`;
-  - создает bridge через `create(baseUrl)`;
-  - подписывается на root state, feature state и child navigation state.
+Ключевые точки:
 
-- `kmp/core/src/commonMain/kotlin/com/example/kmpexample/kmp/core/bridge/web/WebRootBridge.kt`  
-  Kotlin bridge, экспортируемый в JS через `@JsExport`. Он оборачивает shared `RootComponent` и отдает наружу:
-  - текущие child kind;
-  - полные JSON-снимки состояний;
-  - методы действий для auth / contacts / info / editor.
+- `web-app/scripts/sync-shared-core.mjs`
+  - запускает `:kmp:bridge-web:jsBrowserDevelopmentLibraryDistribution`
+  - копирует JS-вывод из `kmp/bridge-web/build/dist/js/developmentLibrary`
+  - генерирует `manifest.json` с порядком загрузки скриптов
 
-- `web-app/src/app/app.ts`  
-  Инициализирует bridge и синхронизирует Angular router с текущим состоянием KMP.
+- `kmp/bridge-web/build.gradle.kts`
+  - собирает JS-библиотеку
+  - генерирует TypeScript-определения
+  - подключает `kmp/tools/bridge-codegen` через KSP
 
-## Как проходит инициализация на web
+- `kmp/bridge-web/src/commonMain/.../WebBridgeFacade.kt`
+  - даёт фасад над `kmp.core.bridge.web.WebBridgeFactory`
+  - содержит `GeneratedRouteTable`
 
-1. `web-app/src/main.ts` вызывает `bootstrapApplication(...)`.
-2. Рендерится корневой `App`.
-3. В `web-app/src/app/app.ts` в `ngOnInit()` вызывается `bridge.initialize('/api/rest')`.
-4. `KmpBridgeService.initialize()` загружает `manifest.json` и затем последовательно грузит все JS-файлы из `web-app/public/shared-core`.
-5. После загрузки service достает `WebBridgeFactory` из глобального namespace KMP.
-6. `WebBridgeFactory.create(baseUrl)` создает `WebRootBridge`, а тот внутри поднимает shared `RootComponent` через `SharedApp.createRootComponent(...)`.
-7. После этого Angular подписывается на root child, contacts child и feature state.
-8. Когда bridge готов, `App` начинает синхронизировать URL браузера с текущим shared-navigation state.
+- `libs/src/lib/data-access-kmp-bridge/data-access-kmp-bridge.ts`
+  - загружает `manifest.json`
+  - последовательно подключает скрипты из `public/shared-core`
+  - ищет KMP-модуль сначала в `globalThis['kmp-example.kmp:bridge-web']`, затем делает fallback на `globalThis['kmp-example.kmp:core']`
+  - создаёт bridge и подписывается на общее состояние
 
-## Сильные стороны
+- `kmp/core/src/commonMain/.../WebRootBridge.kt`
+  - экспортирует `WebBridgeFactory` и `WebRootBridge` через `@JsExport`
+  - создаёт общий root-компонент через `SharedApp.createRootComponent(...)`
+  - отдаёт наружу текущие child kind, JSON-снимки и методы действий
 
-### 1. Тонкий web-shell
+- `web-app/src/app/app.ts`
+  - инициализирует bridge в `ngOnInit()`
+  - синхронизирует Angular router через `bridge.routePath()`
+  - вызывает `bridge.destroy()` в `ngOnDestroy()`
 
-`web-app` в основном не дублирует бизнес-логику. Компоненты Angular проксируют действия в `KmpBridgeService`, а само состояние и правила переходов живут в KMP.
+## Как проходит запуск на web
 
-Плюсы:
+1. Angular поднимает приложение.
+2. Корневой `App` вызывает `KmpBridgeService.initialize('/api/rest')`.
+3. `KmpBridgeService` читает `/shared-core/manifest.json`.
+4. Сервис последовательно загружает все скрипты из `web-app/public/shared-core`.
+5. После загрузки сервис ищет `WebBridgeFactory` в глобальном пространстве имён KMP.
+6. `WebBridgeFactory.create(baseUrl)` создаёт `WebRootBridge`.
+7. `WebRootBridge` внутри создаёт общий `RootComponent`.
+8. `KmpBridgeService` подписывается на root child, contacts child и состояние фич.
+9. Когда bridge готов, Angular начинает синхронизировать URL через `routePath`.
 
-- меньше риска расхождения поведения между платформами;
-- общая логика auth и contacts остается в shared-слое;
-- web легче поддерживать как адаптер UI.
+## Где находится источник истины
 
-### 2. Единый source of truth для состояния
+### Состояние экранов
 
-Основной state живет в KMP-компонентах, а web читает уже готовое состояние.
-
-Это полезно потому, что:
-
-- web не принимает архитектурные решения сам;
-- Angular UI является отображением shared-state;
-- изменения бизнес-логики происходят в одном месте.
-
-### 3. Навигация управляется из shared-слоя
-
-`DefaultRootComponent` и `DefaultContactsComponent` используют Decompose stack navigation, а web лишь отражает текущее child-состояние в URL.
-
-Это делает поведение экранов более единым между платформами.
-
-### 4. Shared JS bundle собирается явно и предсказуемо
-
-Связка с `sync-shared-core.mjs` и `manifest.json` делает процесс загрузки bridge прозрачным:
-
-- KMP собирается отдельно;
-- web-shell потребляет готовый артефакт;
-- зависимости AMD-скриптов раскладываются в правильном порядке.
-
-## Слабые стороны и нюансы
-
-### 1. Граница между Kotlin и web построена на JSON, а не на типобезопасном runtime API
-
-`WebRootBridge` сериализует state в JSON-строки, а `data-access-kmp-bridge.ts` затем делает `JSON.parse`.
-
-Последствия:
-
-- между Kotlin-моделями и TypeScript-моделями нет жесткой runtime-гарантии;
-- изменение поля в Kotlin требует синхронного обновления bridge и TS-типов;
-- ошибки сериализации/рассинхронизации могут проявляться только во время выполнения.
-
-### 2. На web есть ручное дублирование контрактов
-
-В `data-access-kmp-bridge.ts` вручную описаны типы:
+Источником истины для состояния является KMP:
 
 - `AuthState`
 - `ContactsListState`
 - `ContactInfoState`
 - `ContactEditorState`
-- `RootChildKind`
-- `ContactsChildKind`
 
-Это создает риск расхождения с Kotlin-структурами и enum-значениями.
+Web не хранит собственную независимую бизнес-модель. Он получает снимки состояния от общих компонентов и кладёт их в Angular `signal`.
 
-### 3. Навигация частично продублирована
+### Навигация
 
-С одной стороны, реальная активная навигация живет в KMP через Decompose.
-С другой стороны, в `web-app/src/app/app.ts` есть `mapRoute(...)`, который вручную переводит `RootChildKind` и `ContactsChildKind` в Angular routes.
+Источником истины для навигации также является KMP, но с важным уточнением:
 
-Это значит:
+- в shared-контрактах больше нет публичных `watchChildKind()` / `currentChildKind()`
+- для web kind-значения вычисляются приватными file-local функциями в `WebRootBridge.kt`
+- `KmpBridgeService` преобразует пары `rootChildKind + contactsChildKind` в путь через generated route table
 
-- URL в Angular не является первичным источником истины;
-- есть второй слой mapping-логики;
-- при изменении shared navigation можно забыть обновить web routing mapping.
+## Как обновляется route
 
-### 4. Bootstrap web зависит от динамической загрузки множества скриптов
+Сейчас маршрут собирается так:
 
-`KmpBridgeService` грузит файлы из `manifest.json` последовательно.
+1. `WebRootBridge` отдаёт `currentRootChildKind()`, `contactsChildKind()` и подписки `watchRootChildKind(...)`, `watchContactsChildKind(...)`.
+2. `KmpBridgeService` обновляет `rootChildKind` и `contactsChildKind`.
+3. Сервис ищет подходящий путь в `generatedRouteTable`.
+4. Значение сохраняется в `routePath`.
+5. `App` через `effect(...)` вызывает `router.navigateByUrl(...)`, если URL отличается.
 
-Это рабочая схема, но у нее есть ограничения:
+Итог: Angular не содержит локальной логики сопоставления экранов с route path. Эта ответственность централизована в bridge-слое.
 
-- дольше startup;
-- сложнее дебажить, чем стандартный import/npm dependency;
-- web-shell зависит от корректного глобального namespace в `globalThis`.
+## Как состояние попадает в Angular
 
-### 5. Жизненный цикл компонентов и подписок не доведен до явного завершения
+Поток обновления идёт целыми snapshot-объектами:
 
-В проекте bridge и shared root создаются через standalone `ComponentContext`, но явного destroy lifecycle в найденном коде нет.
-Также `KmpBridgeService` умеет отменять подписки при повторном bind, но не реализует отдельный teardown на уничтожение приложения.
+1. общий компонент меняет состояние
+2. `watchState(...)` в KMP получает новое значение
+3. `WebRootBridge` сериализует его в JSON
+4. `KmpBridgeService` получает строку
+5. TypeScript делает `JSON.parse(...)`
+6. Angular `signal` получает новый объект
 
-Это не гарантированная утечка, но архитектурно это слабое место.
+Это даёт простую и рабочую схему: bridge работает не через протокол на основе патчей, а через полные JSON-снимки.
 
-## Как обновляется state
+## Ключевые свойства интеграции
 
-### Источник state
+### 1. Маршрутизация централизована в bridge-слое
 
-Экранный state живет в `BaseMviComponent` через:
+Путь централизован в `KmpBridgeService` и опирается на generated route table.
 
-- `MutableStateFlow`
-- `StateFlow`
-- `watchState(observer)`
+### 2. Граница с TypeScript типизирована
 
-`watchState()`:
+Web использует generated-слой типов. Это снижает риск дрейфа между Kotlin и TypeScript на этапе компиляции.
 
-- сразу отдает текущее состояние;
-- затем подписывается на `state.collectLatest { ... }`;
-- возвращает `StateSubscription`, который может отменить coroutine job.
+### 3. Lifecycle bridge-слоя замкнут
 
-### Как state попадает в web
+- `WebRootBridge.destroy()` вызывает `rootComponent.destroy()`
+- `KmpBridgeService.destroy()` отменяет все подписки и разрушает bridge
+- `App.ngOnDestroy()` вызывает `bridge.destroy()`
 
-Путь обновления такой:
+## Сильные стороны текущей схемы
 
-1. Kotlin-компонент меняет `MutableStateFlow`.
-2. `watchState()` получает новое значение.
-3. `WebRootBridge` сериализует полный state в JSON.
-4. Колбэк в `KmpBridgeService` получает строку.
-5. TypeScript делает `JSON.parse(...)`.
-6. Результат кладется в Angular `signal`.
+### 1. Web-оболочка действительно тонкая
 
-Примерно это выглядит как:
+Angular не тащит в себя доменную логику и не переизобретает экранные машины состояний.
 
-`MutableStateFlow` -> `collectLatest` -> `to*Json()` -> JS callback -> `parseJson()` -> `signal.set(...)`
+### 2. Поведение централизовано в общем коде
 
-### Как обновляется navigation state
+Auth, contacts, корневая навигация и часть realtime/data поведения остаются общими для платформ.
 
-Навигация обновляется отдельно от screen state:
+### 3. Граница web-интеграции выражена явно
 
-- `DefaultRootComponent.watchChildKind(...)` подписывается на Decompose `stack.subscribe(...)`;
-- `DefaultContactsComponent.watchChildKind(...)` подписывается на `childStack.subscribe(...)`;
-- `KmpBridgeService` обновляет `rootChildKind` и `contactsChildKind`;
-- `web-app/src/app/app.ts` через `effect(...)` синхронизирует Angular router с этим значением.
+`kmp/bridge-web` выступает понятной web-ориентированной точкой входа: через него проходят сборка JS bundle, генерация маршрутов и TS-определений.
 
-## Обновляется ли весь экран или только измененная часть
+### 4. Lifecycle bridge-слоя стал управляемым
 
-Ответ состоит из двух уровней.
+У приложения появился нормальный путь teardown, что особенно важно для Decompose-подписок, наблюдений `StateFlow` и долгоживущих общих scope'ов.
 
-### На границе KMP -> JS
+## Ограничения и компромиссы
 
-Обновляется не patch и не отдельное поле, а полный snapshot состояния.
+### 1. Рантайм bridge-слоя строковый
 
-Например, при каждом обновлении contacts list в JSON уходит весь объект:
+Даже при generated TS types обмен между Kotlin и TypeScript идёт через JSON-строки. Это значит, что безопасность на этапе компиляции выше, чем на рантайм-границе.
 
-- `query`
-- `total`
-- `isLoading`
-- `items`
-- `presence`
-- `addOverlay`
-- и другие поля
+### 2. `kmp/bridge-web` не полностью владеет bridge-рантаймом
 
-То есть на мосте между KMP и web обновление идет целиком по всему state объекта.
+Это важный архитектурный нюанс: web bundle собирается из `kmp/bridge-web`, но основная реализация `WebRootBridge` физически живёт в `kmp/core`. Из-за этого легко перепутать точку входа дистрибутива и фактическое место реализации.
 
-### На уровне Angular UI
+### 3. Запуск зависит от динамической загрузки скриптов
 
-Angular не делает полный reload страницы.
-После `signal.set(...)` он пересчитывает зависимости и обновляет только те части шаблона, которые зависят от этого сигнала.
+Текущая схема с `manifest.json` и последовательной подгрузкой скриптов понятна и контролируема, но:
 
-Но есть важный нюанс:
+- увеличивает сложность запуска
+- чуть сложнее в дебаге, чем обычный `import`
+- зависит от корректного глобального пространства имён
 
-- так как в `signal` кладется новый объект целиком, все вычисления, читающие этот signal, будут вычислены заново;
-- при этом DOM-обновление уже делает Angular максимально локально.
+### 4. Обновления состояния крупнозернистые
 
-### Что это означает на практике
+Angular не перерисовывает всю страницу целиком, но данные приходят полными объектами состояния. Это практично, но не является самым экономным вариантом обмена.
 
-- В браузере не происходит "перерисовка всего приложения с нуля" в грубом смысле.
-- Но с точки зрения данных почти всегда передается и заменяется целый state object.
-- Эффективность UI зависит уже от механики Angular signals и шаблонов.
+### 5. Нужна дисциплина вокруг обработки ошибок
 
-### Есть ли локальная оптимизация
-
-Да. В списке контактов используется `@for (...; track ...)`, поэтому Angular может сохранять DOM-элементы списка между обновлениями, если ключ контакта не изменился.
-
-Это улучшает рендер списка, но не меняет того факта, что bridge передает полный state snapshot.
-
-## Как работают корутины на web-части
-
-### Где создаются coroutine scope
-
-В проекте несколько ключевых мест создают свои `CoroutineScope(SupervisorJob() + Dispatchers.Default)`:
-
-- `BaseMviComponent`
-- `DefaultRootComponent`
-- `DefaultAuthComponent`
-- `DefaultContactsComponent`
-- `DefaultContactInfoComponent`
-- `DefaultContactEditorComponent`
-- `ContactsWebSocketClient`
-
-### Что это означает в Kotlin/JS
-
-На web здесь нет обычных JVM threads.
-Корутины Kotlin/JS планируются поверх JS runtime / event loop.
-
-Практический смысл:
-
-- `launch`, `collect`, `delay` работают как асинхронные задачи;
-- сетевые операции и websocket не блокируют интерфейс синхронно;
-- тяжелая CPU-работа в Kotlin/JS все равно конкурирует за тот же JS runtime.
-
-### Почему используется `SupervisorJob`
-
-Это хорошее решение для UI/feature scope:
-
-- падение одного дочернего job не обязано автоматически уронить все остальные;
-- отдельные задачи можно отменять локально;
-- проще поддерживать независимые операции.
-
-### Где видно локальную отмену
-
-В `DefaultContactsComponent` есть:
-
-- `searchJob?.cancel()`
-- `addSearchJob?.cancel()`
-
-Это используется для debounce-поиска и повторного запуска новых запросов.
-
-### Где есть риск
-
-Хотя подписки `watchState()` и некоторые child subscriptions умеют отменяться, в найденном коде не видно полноценного механизма завершения всего shared root lifecycle.
-
-Проблемные точки:
-
-- `createStandaloneComponentContext()` создает `LifecycleRegistry()`, но явного destroy не видно;
-- у service bridge нет общего `dispose()`/`ngOnDestroy()` для финального teardown;
-- долгоживущие coroutine scope выглядят слабо привязанными к завершению жизненного цикла web-приложения.
-
-Это особенно важно для:
-
-- подписок на `StateFlow`;
-- Decompose `subscribe(...)`;
-- websocket/event loops.
-
-## Как устроен event flow на web
-
-Особенно показателен `ContactsWebSocketClient`.
-
-Он:
-
-- держит отдельный `CoroutineScope`;
-- открывает websocket при первом подписчике;
-- закрывает соединение, когда подписчиков больше нет;
-- реконнектится с exponential backoff;
-- публикует события через `MutableSharedFlow<ContactEvent>`.
-
-Это сильная сторона data-layer:
-
-- связь с сервером живет в shared-коде;
-- web не реализует websocket руками;
-- real-time события унифицируются для всех платформ.
-
-Но и тут жизненный цикл зависит от корректного `acquire()` / `release()` и общей дисциплины отмены.
-
-## Что происходит, если ошибка возникает в Kotlin
-
-### Сценарий 1. Ошибка в обычной бизнес-операции
-
-Во многих местах используется `runCatching { ... }.onFailure { ... }`.
-
-Это есть, например, в:
-
-- `DefaultAuthComponent`
-- `DefaultContactsComponent`
-- `DefaultContactInfoComponent`
-- `DefaultContactEditorComponent`
-
-Что происходит в таком случае:
-
-- ошибка не пробрасывается наружу как необработанное исключение;
-- вместо этого в state записывается `errorMessage` или похожее состояние;
-- web получает обновленный state и показывает ошибку в UI.
-
-Это сильная сторона текущего решения.
-
-### Сценарий 2. Ошибка в bridge bootstrap
-
-Если KMP scripts не загрузились или `WebBridgeFactory` не найден:
-
-- исключение поднимется в `initialize()`;
-- `web-app/src/app/app.ts` ловит его в `try/catch`;
-- в `bootstrapError` записывается сообщение;
-- пользователю показывается экран ошибки инициализации bridge.
-
-Это хороший и понятный fallback.
-
-### Сценарий 3. Ошибка в Kotlin coroutine без локального перехвата
-
-Вот здесь уже есть риск.
-
-В проекте найдены места, где coroutine `collect { ... }` работает без явного `runCatching` вокруг самого потока или обработчика:
-
-- `DefaultRootComponent.observeAuthorized()`
-- `DefaultContactsComponent.observeEvents()`
-
-Также в найденном коде не видно:
-
-- `CoroutineExceptionHandler`
-- общего global Kotlin error boundary для web
-- централизованного конвертера необработанных исключений в UI-state
-
-### Что это значит practically
-
-Если ошибка произошла в коде, который обернут в `runCatching`, пользователь, скорее всего, увидит controlled UI error.
-
-Если ошибка произошла в coroutine без локальной обработки, возможны такие последствия:
-
-- отменится конкретная coroutine;
-- часть shared-логики перестанет обновляться;
-- ошибка уйдет в консоль;
-- UI не обязательно упадет полностью, но может остаться в частично "подвисшем" состоянии без понятного сообщения пользователю.
-
-Именно это сейчас выглядит одной из главных архитектурных слабостей web-связки.
-
-## Итоговая оценка
-
-### Сильные стороны
-
-- `web-app` действительно тонкий и не тащит в себя доменную логику.
-- KMP выступает единым источником истины для состояния и переходов.
-- Shared navigation и data-flow централизованы.
-- WebSocket и data behavior вынесены в shared-код.
-- Ошибки большинства пользовательских операций уже переводятся в управляемый UI-state.
-
-### Слабые стороны
-
-- Bridge основан на полном JSON snapshot, а не на типобезопасном инкрементальном обмене.
-- TypeScript-контракты частично дублируют Kotlin-модели вручную.
-- Angular routing дублирует часть навигационного знания KMP.
-- Startup зависит от runtime-загрузки множества скриптов.
-- Lifecycle shared root и coroutine scopes не выглядит полноценно завершенным.
-- Нет централизованной обработки необработанных исключений в Kotlin/JS.
+Большая часть пользовательских сценариев переводит ошибки в UI-state, но для долгоживущих coroutine pipelines и bridge/runtime boundaries важна аккуратная обработка исключений, чтобы не получать "тихие" частичные поломки.
 
 ## Практический вывод
 
-Архитектурно эта связка хороша как thin-shell модель: web-часть действительно адаптирует shared KMP, а не пытается заново реализовать приложение.
-
-Главная цена такого подхода в текущей реализации:
-
-- данные между слоями гоняются крупными JSON-снимками;
-- типовая безопасность на границе Kotlin/TS ограничена;
-- ошибки и lifecycle закрыты не полностью.
-
-Если говорить коротко:
-
-- как shared-platform architecture решение выглядит сильным;
-- как runtime bridge между Kotlin/JS и Angular реализация пока скорее практичная и рабочая, чем строгая и безопасная.
+Связка `web-app` + KMP строится вокруг тонкой Angular-оболочки, централизованного bridge-слоя и generated tooling для маршрутов и типов. Главный архитектурный компромисс находится в форме bridge-рантайма: он опирается на JSON-снимки и на bridge-код, который логически относится к web-границе, но физически частично расположен в `kmp/core`.

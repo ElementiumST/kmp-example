@@ -1,0 +1,13 @@
+---
+description: Feature module folder/layout conventions
+globs: kmp/feature/**
+alwaysApply: false
+---
+
+# Feature Module Layout
+
+- Keep feature public contracts in `component/*Component.kt` and `model/*State|Action.kt`.
+- Keep feature DI entrypoints in `di/*Module.kt`.
+- Keep shared runtime abstractions in `kmp/feature/base`, not per-feature utility files.
+- If bridge exposure is needed, annotate interface-level API in `component`.
+- Feature module build files should only depend on `kmp/domain`, `kmp/feature/base`, and bridge annotations unless justified.

@@ -1,6 +1,7 @@
 package com.example.kmpexample.kmp.feature.contacts.model
 
 import com.example.kmpexample.kmp.domain.model.Contact
+import com.example.kmpexample.kmp.tools.mvi.annotations.GenerateMviActionWrappers
 
 data class ContactInfoState(
     val contact: Contact,
@@ -20,6 +21,7 @@ data class ContactInfoState(
         get() = !contact.isInContacts && contact.profileId.isNotEmpty()
 }
 
+@GenerateMviActionWrappers
 sealed interface ContactInfoAction {
     data object ToggleExtra : ContactInfoAction
 

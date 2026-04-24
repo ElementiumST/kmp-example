@@ -6,7 +6,9 @@ import com.example.kmpexample.kmp.domain.model.ContactDraft
 import com.example.kmpexample.kmp.domain.model.validate
 import com.example.kmpexample.kmp.domain.usecase.CreateNoteContactUseCase
 import com.example.kmpexample.kmp.domain.usecase.UpdateContactUseCase
-import com.example.kmpexample.kmp.feature.base.BaseMviComponent
+import com.example.kmpexample.kmp.feature.base.FeatureStoreComponent
+import com.example.kmpexample.kmp.feature.base.LoggingPlugin
+import com.example.kmpexample.kmp.feature.base.RecoverPlugin
 import com.example.kmpexample.kmp.feature.contacts.model.ContactEditorAction
 import com.example.kmpexample.kmp.feature.contacts.model.ContactEditorMode
 import com.example.kmpexample.kmp.feature.contacts.model.ContactEditorState
@@ -25,9 +27,9 @@ class DefaultContactEditorComponent(
     private val createNoteContactUseCase: CreateNoteContactUseCase?,
     private val updateContactUseCase: UpdateContactUseCase?,
     private val onBack: () -> Unit,
-    private val onSaved: (Contact) -> Unit,
+    private val onSaved: (Contact?, ContactDraft) -> Unit,
     private val coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
-) : BaseMviComponent<ContactEditorState, ContactEditorAction>(
+) : FeatureStoreComponent<ContactEditorState, ContactEditorAction>(
     initialState = ContactEditorState(
         mode = mode,
         isNote = isNote,
@@ -36,6 +38,15 @@ class DefaultContactEditorComponent(
         isDirty = false,
     ),
     coroutineScope = coroutineScope,
+    plugins = listOf(
+        LoggingPlugin(logger = { println("[contact-editor] $it") }),
+        RecoverPlugin { throwable, state ->
+            state.copy(
+                isSaving = false,
+                errorMessage = throwable.message ?: "Unexpected contact editor error",
+            )
+        },
+    ),
 ),
     ContactEditorComponent,
     ComponentContext by componentContext {
@@ -43,6 +54,7 @@ class DefaultContactEditorComponent(
     private val baselineDraft: ContactDraft = initialDraft
 
     override fun onAction(action: ContactEditorAction) {
+        publishAction(action)
         when (action) {
             is ContactEditorAction.UpdateName -> updateDraft { it.copy(name = action.value) }
             is ContactEditorAction.UpdateEmail -> updateDraft { it.copy(email = action.value) }
@@ -90,7 +102,7 @@ class DefaultContactEditorComponent(
         if (!current.canSave) return
 
         mutableState.setVal(current.copy(isSaving = true, errorMessage = null))
-        coroutineScope.launch {
+        launchSafely {
             val result = runCatching {
                 when (current.mode) {
                     ContactEditorMode.CREATE -> {
@@ -113,7 +125,7 @@ class DefaultContactEditorComponent(
                             dismissed = true,
                         ),
                     )
-                    onSaved(contact)
+                    onSaved(contact, current.draft)
                 }
                 .onFailure { throwable ->
                     mutableState.setVal(

@@ -12,9 +12,9 @@ import kotlinx.coroutines.flow.Flow
 interface ContactsRepository {
     suspend fun getContacts(query: String, offset: Int, limit: Int): ContactsPage
 
-    suspend fun createNoteContact(draft: ContactDraft): Contact
+    suspend fun createNoteContact(draft: ContactDraft): Contact?
 
-    suspend fun updateContact(contactId: String, isNote: Boolean, draft: ContactDraft): Contact
+    suspend fun updateContact(contactId: String, isNote: Boolean, draft: ContactDraft): Contact?
 
     suspend fun deleteContact(contactId: String)
 

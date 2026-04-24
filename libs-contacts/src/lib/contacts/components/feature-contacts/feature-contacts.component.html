@@ -1,0 +1,11 @@
+@let showList = isList();
+@let showInfo = isInfo() && !!info();
+@let showEditor = isEditor() && !!editor();
+
+@if (showList) {
+  <lib-contacts-list class="page"></lib-contacts-list>
+} @else if (showInfo) {
+  <lib-contact-info class="page"></lib-contact-info>
+} @else if (showEditor) {
+  <lib-contact-editor class="page"></lib-contact-editor>
+}

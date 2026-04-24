@@ -1,5 +1,6 @@
 plugins {
     id("dev.nx.gradle.project-graph") version("0.1.15")
+    id("com.google.devtools.ksp") version "2.1.21-2.0.1" apply false
 }
 buildscript {
     repositories {
@@ -20,5 +21,27 @@ buildscript {
 allprojects {
     apply {
         plugin("dev.nx.gradle.project-graph")
+    }
+}
+
+subprojects {
+    if (!path.startsWith(":kmp:feature:")) return@subprojects
+
+    pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
+        pluginManager.apply("com.google.devtools.ksp")
+        dependencies.add("commonMainImplementation", project(":kmp:tools:mvi-annotations"))
+        dependencies.add("kspCommonMainMetadata", project(":kmp:tools:mvi-codegen"))
+
+        extensions.configure<org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension>("kotlin") {
+            sourceSets.getByName("commonMain").kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
+        }
+
+        tasks.matching {
+            it.name.contains("compile", ignoreCase = true) && it.name.contains("Kotlin")
+        }.configureEach {
+            if (name != "kspCommonMainKotlinMetadata") {
+                dependsOn("kspCommonMainKotlinMetadata")
+            }
+        }
     }
 }

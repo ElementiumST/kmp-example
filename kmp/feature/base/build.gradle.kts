@@ -22,6 +22,12 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.flowmvi.core)
+            implementation(libs.flowmvi.essenty)
+            implementation(libs.flowmvi.savedstate)
+        }
+        commonTest.dependencies {
+            implementation(libs.flowmvi.test)
         }
     }
 }

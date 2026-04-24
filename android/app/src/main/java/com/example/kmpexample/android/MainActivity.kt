@@ -12,16 +12,18 @@ import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.example.kmpexample.android.contacts.ContactsFeatureHost
-import com.example.kmpexample.kmp.core.app.SharedApp
-import com.example.kmpexample.kmp.core.app.SharedAppConfig
+import com.example.kmpexample.kmp.app.SharedAppFacade
+import com.example.kmpexample.kmp.app.SharedAppConfig
 import com.example.kmpexample.kmp.core.component.RootComponent
 import com.example.kmpexample.kmp.data.db.AndroidDatabaseFactory
 
 class MainActivity : ComponentActivity() {
+    private lateinit var rootComponent: RootComponent
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val rootComponent = SharedApp.createRootComponent(
+        rootComponent = SharedAppFacade.createRootComponent(
             config = SharedAppConfig(
                 databaseFactory = AndroidDatabaseFactory(applicationContext),
             ),
@@ -30,6 +32,11 @@ class MainActivity : ComponentActivity() {
         setContent {
             AndroidApp(rootComponent = rootComponent)
         }
+    }
+
+    override fun onDestroy() {
+        rootComponent.destroy()
+        super.onDestroy()
     }
 }
 

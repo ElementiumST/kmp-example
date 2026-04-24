@@ -6,8 +6,9 @@ alwaysApply: false
 
 # iOS Shell
 
-- `ios/app` is a SwiftUI shell over `SharedCore.framework` built from `kmp/core`.
+- `ios/app` is a SwiftUI shell over shared framework exports with bridge facades from `kmp/bridge-apple`.
 - Keep native SwiftUI views, project generation, and Apple integration details here.
 - Prefer consuming shared state through the existing Apple bridge instead of duplicating domain logic in Swift.
-- If the shell needs new shared behavior, adjust `kmp/core` bridge code rather than creating a Swift-only source of truth.
+- If the shell needs new shared behavior, adjust shared bridge annotations/codegen flow rather than creating Swift-only source of truth.
+- Ensure lifecycle teardown is explicit: call `rootComponent.destroy()` in `deinit`.
 - Check `ios/app/README.md` before changing framework build or project generation steps.

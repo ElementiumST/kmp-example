@@ -1,5 +1,8 @@
 package com.example.kmpexample.kmp.feature.contacts.model
 
+import com.example.kmpexample.kmp.tools.mvi.annotations.GenerateMviActionWrappers
+
+@GenerateMviActionWrappers
 sealed interface ContactsListAction {
     data object Refresh : ContactsListAction
 

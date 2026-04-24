@@ -1,12 +1,15 @@
 package com.example.kmpexample.kmp.core.bridge.web
 
+import com.arkivanov.decompose.value.subscribe
 import com.example.kmpexample.kmp.core.app.SharedApp
 import com.example.kmpexample.kmp.core.app.SharedAppConfig
 import com.example.kmpexample.kmp.core.component.RootComponent
 import com.example.kmpexample.kmp.data.config.NetworkConfig
+import com.example.kmpexample.kmp.feature.auth.component.AuthComponent
 import com.example.kmpexample.kmp.feature.base.StateSubscription
 import com.example.kmpexample.kmp.feature.contacts.component.ContactEditorComponent
 import com.example.kmpexample.kmp.feature.contacts.component.ContactInfoComponent
+import com.example.kmpexample.kmp.feature.contacts.component.ContactsComponent
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
@@ -40,12 +43,10 @@ class WebRootBridge private constructor() {
         this.rootComponent = rootComponent
     }
 
-    fun currentRootChildKind(): String = rootComponent.currentChildKind().name
+    fun currentRootChildKind(): String = rootComponent.currentRootChildKindString()
 
     fun watchRootChildKind(observer: (String) -> Unit): StateSubscription {
-        return rootComponent.watchChildKind { kind ->
-            observer(kind.name)
-        }
+        return rootComponent.watchRootChildKindString(observer)
     }
 
     fun authStateJson(): String = authComponentOrNull()
@@ -72,13 +73,11 @@ class WebRootBridge private constructor() {
         authComponentOrNull()?.submit()
     }
 
-    fun contactsChildKind(): String = contactsComponentOrNull()?.currentChildKind()?.name ?: "LIST"
+    fun contactsChildKind(): String = contactsComponentOrNull()?.currentContactsChildKindString() ?: "LIST"
 
     fun watchContactsChildKind(observer: (String) -> Unit): StateSubscription {
         val component = contactsComponentOrNull() ?: return StateSubscription {}
-        return component.watchChildKind { kind ->
-            observer(kind.name)
-        }
+        return component.watchContactsChildKindString(observer)
     }
 
     fun contactsListStateJson(): String = contactsComponentOrNull()
@@ -141,8 +140,7 @@ class WebRootBridge private constructor() {
         contactsComponentOrNull()?.inviteInterlocutor(profileId)
     }
 
-    fun contactInfoStateJson(): String = contactsComponentOrNull()
-        ?.currentInfoComponentOrNull()
+    fun contactInfoStateJson(): String = infoComponentOrNull()
         ?.currentState()
         ?.toContactInfoJson()
         ?: "{}"
@@ -234,19 +232,89 @@ class WebRootBridge private constructor() {
         activeEditorComponentOrNull()?.cancelLeave()
     }
 
-    private fun authComponentOrNull() = rootComponent.currentAuthComponentOrNull()
+    fun destroy() {
+        rootComponent.destroy()
+    }
 
-    private fun contactsComponentOrNull() = rootComponent.currentContactsComponentOrNull()
+    private fun authComponentOrNull(): AuthComponent? =
+        (rootComponent.stack.value.active.instance as? RootComponent.Child.Auth)?.component
+
+    private fun contactsComponentOrNull(): ContactsComponent? =
+        (rootComponent.stack.value.active.instance as? RootComponent.Child.Contacts)?.component
 
     private fun infoComponentOrNull(): ContactInfoComponent? {
-        return contactsComponentOrNull()?.currentInfoComponentOrNull()
+        val contacts = contactsComponentOrNull() ?: return null
+        return (contacts.childStack.value.active.instance as? ContactsComponent.Child.Info)?.component
     }
 
     private fun activeEditorComponentOrNull(): ContactEditorComponent? {
-        val contactsComponent = contactsComponentOrNull() ?: return null
-        return contactsComponent.currentCreateComponentOrNull()
-            ?: contactsComponent.currentEditComponentOrNull()
+        val contacts = contactsComponentOrNull() ?: return null
+        return when (val active = contacts.childStack.value.active.instance) {
+            is ContactsComponent.Child.Create -> active.component
+            is ContactsComponent.Child.Edit -> active.component
+            else -> null
+        }
     }
+}
+
+private fun RootComponent.currentRootChildKindString(): String {
+    val active = stack.value.active.instance
+    return when (active) {
+        is RootComponent.Child.Auth -> "AUTH"
+        is RootComponent.Child.Contacts -> when (active.component.childStack.value.active.instance) {
+            ContactsComponent.Child.List -> "CONTACTS_LIST"
+            is ContactsComponent.Child.Info -> "CONTACT_INFO"
+            is ContactsComponent.Child.Create -> "CONTACT_CREATE"
+            is ContactsComponent.Child.Edit -> "CONTACT_EDIT"
+        }
+    }
+}
+
+private fun RootComponent.watchRootChildKindString(
+    observer: (String) -> Unit,
+): StateSubscription {
+    observer(currentRootChildKindString())
+    var innerCancellation: (() -> Unit)? = null
+
+    fun rebindContacts(contacts: ContactsComponent?) {
+        innerCancellation?.invoke()
+        innerCancellation = null
+        if (contacts != null) {
+            val cancel = contacts.childStack.subscribe {
+                observer(currentRootChildKindString())
+            }
+            innerCancellation = { cancel.cancel() }
+        }
+    }
+
+    val outerCancellation = stack.subscribe { childStack ->
+        observer(currentRootChildKindString())
+        val active = childStack.active.instance
+        rebindContacts((active as? RootComponent.Child.Contacts)?.component)
+    }
+
+    return StateSubscription {
+        innerCancellation?.invoke()
+        outerCancellation.cancel()
+    }
+}
+
+private fun ContactsComponent.currentContactsChildKindString(): String =
+    when (childStack.value.active.instance) {
+        ContactsComponent.Child.List -> "LIST"
+        is ContactsComponent.Child.Info -> "INFO"
+        is ContactsComponent.Child.Create -> "CREATE"
+        is ContactsComponent.Child.Edit -> "EDIT"
+    }
+
+private fun ContactsComponent.watchContactsChildKindString(
+    observer: (String) -> Unit,
+): StateSubscription {
+    observer(currentContactsChildKindString())
+    val cancellation = childStack.subscribe {
+        observer(currentContactsChildKindString())
+    }
+    return StateSubscription { cancellation.cancel() }
 }
 
 private fun com.example.kmpexample.kmp.feature.auth.model.AuthScreenState.toAuthStateJson(): String {

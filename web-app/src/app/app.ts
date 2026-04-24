@@ -1,4 +1,4 @@
-import { Component, OnInit, effect, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, effect, inject, signal } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { KmpBridgeService } from 'data-access-kmp-bridge';
 
@@ -8,7 +8,7 @@ import { KmpBridgeService } from 'data-access-kmp-bridge';
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
-export class App implements OnInit {
+export class App implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly bridge = inject(KmpBridgeService);
 
@@ -20,9 +20,7 @@ export class App implements OnInit {
       if (!this.bridge.ready()) {
         return;
       }
-      const root = this.bridge.rootChildKind();
-      const contactsChild = this.bridge.contactsChildKind();
-      const target = this.mapRoute(root, contactsChild);
+      const target = this.bridge.routePath();
       if (this.router.url !== `/${target}`) {
         void this.router.navigateByUrl(target, { replaceUrl: true });
       }
@@ -40,22 +38,7 @@ export class App implements OnInit {
     }
   }
 
-  private mapRoute(
-    root: 'AUTH' | 'CONTACTS_LIST' | 'CONTACT_INFO' | 'CONTACT_CREATE' | 'CONTACT_EDIT',
-    contactsChild: 'LIST' | 'INFO' | 'CREATE' | 'EDIT',
-  ): string {
-    if (root === 'AUTH') {
-      return 'auth';
-    }
-    if (root === 'CONTACTS_LIST') {
-      if (contactsChild === 'INFO') return 'contacts/info';
-      if (contactsChild === 'CREATE') return 'contacts/create';
-      if (contactsChild === 'EDIT') return 'contacts/edit';
-      return 'contacts';
-    }
-    if (root === 'CONTACT_INFO') return 'contacts/info';
-    if (root === 'CONTACT_CREATE') return 'contacts/create';
-    if (root === 'CONTACT_EDIT') return 'contacts/edit';
-    return 'auth';
+  ngOnDestroy(): void {
+    this.bridge.destroy();
   }
 }

@@ -4,7 +4,9 @@ import com.arkivanov.decompose.ComponentContext
 import com.example.kmpexample.kmp.domain.model.Contact
 import com.example.kmpexample.kmp.domain.usecase.DeleteContactUseCase
 import com.example.kmpexample.kmp.domain.usecase.InviteContactUseCase
-import com.example.kmpexample.kmp.feature.base.BaseMviComponent
+import com.example.kmpexample.kmp.feature.base.FeatureStoreComponent
+import com.example.kmpexample.kmp.feature.base.LoggingPlugin
+import com.example.kmpexample.kmp.feature.base.RecoverPlugin
 import com.example.kmpexample.kmp.feature.contacts.model.ContactInfoAction
 import com.example.kmpexample.kmp.feature.contacts.model.ContactInfoState
 import kotlinx.coroutines.CoroutineScope
@@ -21,14 +23,25 @@ class DefaultContactInfoComponent(
     private val onEdit: (Contact) -> Unit,
     private val onDeleted: (String) -> Unit,
     private val coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
-) : BaseMviComponent<ContactInfoState, ContactInfoAction>(
+) : FeatureStoreComponent<ContactInfoState, ContactInfoAction>(
     initialState = ContactInfoState(contact = contact),
     coroutineScope = coroutineScope,
+    plugins = listOf(
+        LoggingPlugin(logger = { println("[contact-info] $it") }),
+        RecoverPlugin { throwable, state ->
+            state.copy(
+                isDeleting = false,
+                isInviting = false,
+                errorMessage = throwable.message ?: "Unexpected contact info error",
+            )
+        },
+    ),
 ),
     ContactInfoComponent,
     ComponentContext by componentContext {
 
     override fun onAction(action: ContactInfoAction) {
+        publishAction(action)
         when (action) {
             ContactInfoAction.ToggleExtra -> mutableState.update { it.copy(isExtraExpanded = !it.isExtraExpanded) }
             ContactInfoAction.Back -> onBack()
@@ -46,7 +59,7 @@ class DefaultContactInfoComponent(
         val current = mutableState.value
         if (current.isDeleting || current.contact.contactId.isEmpty()) return
         mutableState.update { it.copy(isDeleting = true, errorMessage = null) }
-        coroutineScope.launch {
+        launchSafely {
             runCatching { deleteContactUseCase(current.contact.contactId) }
                 .onSuccess { onDeleted(current.contact.contactId) }
                 .onFailure { throwable ->
@@ -64,7 +77,7 @@ class DefaultContactInfoComponent(
         val current = mutableState.value
         if (current.isInviting || current.contact.profileId.isEmpty()) return
         mutableState.update { it.copy(isInviting = true, errorMessage = null) }
-        coroutineScope.launch {
+        launchSafely {
             runCatching { inviteContactUseCase(current.contact.profileId) }
                 .onSuccess {
                     mutableState.update {

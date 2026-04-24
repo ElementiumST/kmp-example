@@ -7,7 +7,7 @@ import com.example.kmpexample.kmp.domain.repository.ContactsRepository
 class CreateNoteContactUseCase(
     private val repository: ContactsRepository,
 ) {
-    suspend operator fun invoke(draft: ContactDraft): Contact {
+    suspend operator fun invoke(draft: ContactDraft): Contact? {
         return repository.createNoteContact(draft)
     }
 }

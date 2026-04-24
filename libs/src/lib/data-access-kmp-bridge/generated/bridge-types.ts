@@ -1,0 +1,138 @@
+export type RootChildKind =
+  | 'AUTH'
+  | 'CONTACTS_LIST'
+  | 'CONTACT_INFO'
+  | 'CONTACT_CREATE'
+  | 'CONTACT_EDIT';
+
+export type ContactsChildKind = 'LIST' | 'INFO' | 'CREATE' | 'EDIT';
+
+export type AuthState = {
+  login: string;
+  password: string;
+  isLoading: boolean;
+  isAuthorized: boolean;
+  errorMessage: string | null;
+  sessionId: string | null;
+  authorizedLogin: string | null;
+  authorizedName: string | null;
+  submitLabel: string;
+  canSubmit: boolean;
+};
+
+export type ContactItem = {
+  contactId: string;
+  profileId: string;
+  name: string;
+  email: string;
+  phone: string;
+  note: string;
+  tags: string[];
+  interlocutorType: string;
+  avatarUrl: string;
+  aboutSelf: string;
+  additionalContact: string;
+  externalDomainHost: string;
+  externalDomainName: string;
+  presence: string;
+  isNote: boolean;
+  isInContacts: boolean;
+};
+
+export type InterlocutorItem = {
+  profileId: string;
+  contactId: string;
+  name: string;
+  email: string;
+  phone: string;
+  avatarUrl: string;
+  interlocutorType: string;
+  externalDomainHost: string;
+  externalDomainName: string;
+  isInContacts: boolean;
+};
+
+export type ContactAddOverlayState = {
+  query: string;
+  isLoading: boolean;
+  isLoadingMore: boolean;
+  errorMessage: string | null;
+  hasMore: boolean;
+  foreignOffset: number;
+  companyOffset: number;
+  directoryOffset: number;
+  domainOffset: number;
+  items: InterlocutorItem[];
+  invitingProfileIds: string[];
+};
+
+export type ContactsListState = {
+  query: string;
+  total: number;
+  isLoading: boolean;
+  isLoadingMore: boolean;
+  isRefreshing: boolean;
+  errorMessage: string | null;
+  hasMore: boolean;
+  isAddOverlayVisible: boolean;
+  contextMenuContactIndex: number;
+  snackbarMessage: string | null;
+  items: ContactItem[];
+  presence: Record<string, string>;
+  addOverlay: ContactAddOverlayState;
+};
+
+export type ContactInfoState = {
+  contact: ContactItem;
+  isExtraExpanded: boolean;
+  isDeleting: boolean;
+  isInviting: boolean;
+  errorMessage: string | null;
+  snackbarMessage: string | null;
+  isCallButtonsVisible: boolean;
+  isDeleteVisible: boolean;
+  isAddToContactsVisible: boolean;
+};
+
+export type ContactEditorState = {
+  mode: 'CREATE' | 'EDIT';
+  isNote: boolean;
+  isDirty: boolean;
+  isSaving: boolean;
+  errorMessage: string | null;
+  showLeaveConfirmation: boolean;
+  dismissed: boolean;
+  canSave: boolean;
+  draft: {
+    name: string;
+    email: string;
+    phone: string;
+    note: string;
+    tagsText: string;
+  };
+  validation: {
+    isValid: boolean;
+    name: string | null;
+    email: string | null;
+    phone: string | null;
+    note: string | null;
+    tags: string | null;
+  };
+};
+
+export type BridgeRoute = {
+  root: RootChildKind;
+  contacts: ContactsChildKind;
+  path: string;
+};
+
+export const generatedRouteTable: BridgeRoute[] = [
+  { root: 'AUTH', contacts: 'LIST', path: 'auth' },
+  { root: 'CONTACTS_LIST', contacts: 'LIST', path: 'contacts' },
+  { root: 'CONTACTS_LIST', contacts: 'INFO', path: 'contacts/info' },
+  { root: 'CONTACTS_LIST', contacts: 'CREATE', path: 'contacts/create' },
+  { root: 'CONTACTS_LIST', contacts: 'EDIT', path: 'contacts/edit' },
+  { root: 'CONTACT_INFO', contacts: 'INFO', path: 'contacts/info' },
+  { root: 'CONTACT_CREATE', contacts: 'CREATE', path: 'contacts/create' },
+  { root: 'CONTACT_EDIT', contacts: 'EDIT', path: 'contacts/edit' },
+];

@@ -1,0 +1,95 @@
+@let editorDraft = draft();
+@let errorMsg = errorMessage();
+@let nameErrorMsg = nameError();
+@let emailErrorMsg = emailError();
+@let phoneErrorMsg = phoneError();
+@let noteErrorMsg = noteError();
+@let tagsErrorMsg = tagsError();
+
+<header class="header">
+  <button type="button" (click)="back()">Назад</button>
+  <h1>{{ title() }}</h1>
+</header>
+
+@if (errorMsg) {
+  <p class="error">{{ errorMsg }}</p>
+}
+
+<section class="form">
+  @if (isNote()) {
+    <label>
+      <span>Имя</span>
+      <input
+        type="text"
+        [value]="editorDraft.name"
+        (input)="onNameInput(($any($event.target).value ?? '').toString())"
+      />
+      @if (nameErrorMsg) {
+        <small class="error">{{ nameErrorMsg }}</small>
+      }
+    </label>
+
+    <label>
+      <span>Email</span>
+      <input
+        type="text"
+        [value]="editorDraft.email"
+        (input)="onEmailInput(($any($event.target).value ?? '').toString())"
+      />
+      @if (emailErrorMsg) {
+        <small class="error">{{ emailErrorMsg }}</small>
+      }
+    </label>
+
+    <label>
+      <span>Телефон</span>
+      <input
+        type="text"
+        [value]="editorDraft.phone"
+        (input)="onPhoneInput(($any($event.target).value ?? '').toString())"
+      />
+      @if (phoneErrorMsg) {
+        <small class="error">{{ phoneErrorMsg }}</small>
+      }
+    </label>
+  }
+
+  <label>
+    <span>Комментарий</span>
+    <textarea
+      rows="4"
+      [value]="editorDraft.note"
+      (input)="onNoteInput(($any($event.target).value ?? '').toString())"
+    ></textarea>
+    @if (noteErrorMsg) {
+      <small class="error">{{ noteErrorMsg }}</small>
+    }
+  </label>
+
+  <label>
+    <span>Теги</span>
+    <input
+      type="text"
+      [value]="editorDraft.tagsText"
+      (input)="onTagsInput(($any($event.target).value ?? '').toString())"
+    />
+    @if (tagsErrorMsg) {
+      <small class="error">{{ tagsErrorMsg }}</small>
+    }
+  </label>
+
+  <button type="button" [disabled]="saveDisabled()" (click)="save()">
+    {{ saveLabel() }}
+  </button>
+</section>
+
+@if (showLeaveConfirmation()) {
+  <section class="leave-confirmation">
+    <h3>Выйти без сохранения?</h3>
+    <p>Изменения будут потеряны.</p>
+    <div class="leave-confirmation__actions">
+      <button type="button" (click)="confirmLeave()">Выйти</button>
+      <button type="button" (click)="cancelLeave()">Отмена</button>
+    </div>
+  </section>
+}

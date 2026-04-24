@@ -30,15 +30,15 @@ class ContactsRepositoryImpl(
         return page
     }
 
-    override suspend fun createNoteContact(draft: ContactDraft): Contact {
+    override suspend fun createNoteContact(draft: ContactDraft): Contact? {
         val contact = remote.createNoteContact(draft)
-        if (contact.contactId.isNotEmpty()) {
+        if (contact != null && contact.contactId.isNotEmpty()) {
             knownContactIds += contact.contactId
         }
         return contact
     }
 
-    override suspend fun updateContact(contactId: String, isNote: Boolean, draft: ContactDraft): Contact {
+    override suspend fun updateContact(contactId: String, isNote: Boolean, draft: ContactDraft): Contact? {
         return remote.updateContact(contactId, isNote, draft)
     }
 

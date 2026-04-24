@@ -9,7 +9,7 @@ const workspaceDir = path.resolve(webAppDir, '..');
 const sourceDir = path.resolve(
   workspaceDir,
   'kmp',
-  'core',
+  'bridge-web',
   'build',
   'dist',
   'js',
@@ -80,12 +80,12 @@ const buildManifest = (directory) => {
 };
 
 if (process.platform === 'win32') {
-  execFileSync('cmd.exe', ['/c', gradleWrapper, ':kmp:core:jsBrowserDevelopmentLibraryDistribution'], {
+  execFileSync('cmd.exe', ['/c', gradleWrapper, ':kmp:bridge-web:jsBrowserDevelopmentLibraryDistribution'], {
     cwd: workspaceDir,
     stdio: 'inherit',
   });
 } else {
-  execFileSync(gradleWrapper, [':kmp:core:jsBrowserDevelopmentLibraryDistribution'], {
+  execFileSync(gradleWrapper, [':kmp:bridge-web:jsBrowserDevelopmentLibraryDistribution'], {
     cwd: workspaceDir,
     stdio: 'inherit',
   });
@@ -93,7 +93,7 @@ if (process.platform === 'win32') {
 
 if (!existsSync(sourceDir)) {
   console.warn(
-    '[sync-shared-core] Shared core bundle not found. Run "./gradlew :kmp:core:jsBrowserDevelopmentLibraryDistribution" first.',
+    '[sync-shared-core] Shared core bundle not found. Run "./gradlew :kmp:bridge-web:jsBrowserDevelopmentLibraryDistribution" first.',
   );
   process.exit(0);
 }

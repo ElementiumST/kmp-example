@@ -17,5 +17,5 @@ targets:
         INFOPLIST_FILE: Info.plist
         SWIFT_VERSION: 5.10
     dependencies:
-      - framework: ../../kmp/core/build/XCFrameworks/release/SharedCore.xcframework
+      - framework: ../../kmp/bridge-apple/build/XCFrameworks/release/SharedCore.xcframework
       - sdk: libsqlite3.tbd

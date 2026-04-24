@@ -6,8 +6,10 @@ alwaysApply: false
 
 # Web Shell
 
-- `web-app` is an Angular + Nx shell over the KMP web bridge exported from `kmp/core`.
+- `web-app` is an Angular + Nx shell over the KMP web bridge exported from `kmp/bridge-web`.
 - Keep browser UI, Angular/Nx setup, and bridge adaptation here.
-- Prefer consuming shared state from the bridge rather than reimplementing business logic in TypeScript.
-- If the required shared API is missing, update `kmp/core` bridge code instead of inventing a parallel web-only contract.
+- Prefer consuming generated bridge types from `libs/src/lib/data-access-kmp-bridge/generated/bridge-types.ts`.
+- Prefer `routePath`/generated route table over local route-mapping functions in Angular components.
+- If the required shared API is missing, add it either as a pure shared MVI method on the feature component OR as a web-only helper inside `kmp/bridge-web` (pattern-matching/navigation/JSON shims live there, NOT in shared interfaces).
+- Ensure bridge lifecycle teardown is wired (`KmpBridgeService.destroy()` on shell destroy).
 - Check `web-app/README.md` when working on bridge setup or build integration.

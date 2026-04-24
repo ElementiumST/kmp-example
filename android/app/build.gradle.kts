@@ -39,7 +39,8 @@ kotlin {
 }
 
 dependencies {
-    implementation(project(":kmp:core"))
+    implementation(project(":kmp:app"))
+    implementation(project(":kmp:navigation"))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)

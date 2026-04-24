@@ -1,0 +1,13 @@
+---
+description: FlowMVI-oriented feature runtime conventions
+globs: kmp/feature/**
+alwaysApply: false
+---
+
+# FlowMVI Runtime Rules
+
+- New feature state machines should be implemented on top of `FeatureStoreComponent` in `kmp/feature/base`.
+- Each feature should define explicit state/action contracts and keep side-effects in dedicated handlers.
+- Use shared plugins for recover/logging/retry/saved-state behavior; avoid copy-pasting error handling in each feature.
+- Prefer lifecycle-aware scopes (`featureCoroutineScope`) for long-lived jobs.
+- Keep UI intent methods thin and delegate to `onAction(...)`.

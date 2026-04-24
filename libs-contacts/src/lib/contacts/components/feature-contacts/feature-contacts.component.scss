@@ -1,0 +1,23 @@
+:host {
+  display: block;
+}
+
+.page {
+  display: block;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+input,
+textarea,
+button {
+  border: 1px solid #bdbdbd;
+  border-radius: 8px;
+  padding: 0.55rem 0.65rem;
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}

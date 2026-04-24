@@ -1,0 +1,12 @@
+---
+description: Cross-platform lifecycle teardown requirements
+alwaysApply: true
+---
+
+# Lifecycle Rules
+
+- Every shared root component must expose explicit teardown (`destroy()`).
+- Android shell must call `rootComponent.destroy()` from `Activity.onDestroy()`.
+- iOS shell must call `rootComponent.destroy()` from `deinit`.
+- Web shell must call `KmpBridgeService.destroy()` from `ngOnDestroy`.
+- Coroutine scopes started by shared components should be cancelled on lifecycle end.

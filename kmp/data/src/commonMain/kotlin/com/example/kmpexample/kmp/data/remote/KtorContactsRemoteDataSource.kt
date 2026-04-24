@@ -15,7 +15,9 @@ import io.ktor.client.request.parameter
 import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 
 class KtorContactsRemoteDataSource(
@@ -40,7 +42,7 @@ class KtorContactsRemoteDataSource(
         )
     }
 
-    override suspend fun createNoteContact(draft: ContactDraft): Contact {
+    override suspend fun createNoteContact(draft: ContactDraft): Contact? {
         val body = ApiCreateNoteContactBody(
             name = draft.name,
             email = draft.email.ifEmpty { null },
@@ -48,16 +50,16 @@ class KtorContactsRemoteDataSource(
             note = draft.note,
             tags = draft.tags(),
         )
-        val dto = httpClient.post("$contactsPath/create-note") {
+        val response = httpClient.post("$contactsPath/create-note") {
             contentType(ContentType.Application.Json)
             setBody(body)
-        }.body<ApiContactDto>()
-        return dto.toDomain(avatarOrigin)
+        }
+        return response.parseContactOrNullOn204()
     }
 
-    override suspend fun updateContact(contactId: String, isNote: Boolean, draft: ContactDraft): Contact {
+    override suspend fun updateContact(contactId: String, isNote: Boolean, draft: ContactDraft): Contact? {
         val url = "$contactsPath/$contactId"
-        val dto: ApiContactDto = if (isNote) {
+        val response: HttpResponse = if (isNote) {
             val body = ApiContactUpdateBody(
                 name = draft.name,
                 email = ApiNullableString(draft.email),
@@ -68,7 +70,7 @@ class KtorContactsRemoteDataSource(
             httpClient.patch(url) {
                 contentType(ContentType.Application.Json)
                 setBody(body)
-            }.body()
+            }
         } else {
             val body = ApiContactNoteUpdateBody(
                 note = ApiNullableString(draft.note),
@@ -77,9 +79,14 @@ class KtorContactsRemoteDataSource(
             httpClient.patch(url) {
                 contentType(ContentType.Application.Json)
                 setBody(body)
-            }.body()
+            }
         }
-        return dto.toDomain(avatarOrigin)
+        return response.parseContactOrNullOn204()
+    }
+
+    private suspend fun HttpResponse.parseContactOrNullOn204(): Contact? {
+        if (status == HttpStatusCode.NoContent) return null
+        return body<ApiContactDto>().toDomain(avatarOrigin)
     }
 
     override suspend fun deleteContact(contactId: String) {

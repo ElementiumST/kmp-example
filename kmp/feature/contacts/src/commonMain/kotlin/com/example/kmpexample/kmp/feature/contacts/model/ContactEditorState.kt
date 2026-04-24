@@ -2,6 +2,7 @@ package com.example.kmpexample.kmp.feature.contacts.model
 
 import com.example.kmpexample.kmp.domain.model.ContactDraft
 import com.example.kmpexample.kmp.domain.model.ContactValidation
+import com.example.kmpexample.kmp.tools.mvi.annotations.GenerateMviActionWrappers
 
 enum class ContactEditorMode { CREATE, EDIT }
 
@@ -20,6 +21,7 @@ data class ContactEditorState(
         get() = !isSaving && isDirty && validation.isValid
 }
 
+@GenerateMviActionWrappers
 sealed interface ContactEditorAction {
     data class UpdateName(val value: String) : ContactEditorAction
 

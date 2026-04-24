@@ -53,7 +53,8 @@ final class RootViewModel: ObservableObject {
     @Published private(set) var infoState: ContactInfoState?
     @Published private(set) var editorState: ContactEditorState?
 
-    private let rootComponent: any RootComponent
+    private let rootAccessor: AppleRootAccessor
+    private var contactsAccessor: AppleContactsAccessor?
     private var authComponent: (any AuthComponent)?
     private var contactsComponent: (any ContactsComponent)?
 
@@ -65,14 +66,14 @@ final class RootViewModel: ObservableObject {
     private var editorSubscription: StateSubscription?
 
     init(factory: AppleAppFactory = AppleAppFactory()) {
-        self.rootComponent = factory.createRootComponent()
+        self.rootAccessor = factory.createRootAccessor(config: SharedAppConfig())
         bindRoot()
     }
 
     private func bindRoot() {
-        rootChildSubscription = rootComponent.watchChildKind { [weak self] kind in
+        rootChildSubscription = rootAccessor.watchKind { [weak self] kind in
             guard let self else { return }
-            let mapped = Self.mapRootKind(kind)
+            let mapped = Self.map(rootKind: kind)
             Task { @MainActor in
                 self.childKind = mapped
                 self.rebindForCurrentRootChild()
@@ -88,8 +89,9 @@ final class RootViewModel: ObservableObject {
         infoSubscription?.cancel()
         editorSubscription?.cancel()
 
-        authComponent = rootComponent.currentAuthComponentOrNull()
-        contactsComponent = rootComponent.currentContactsComponentOrNull()
+        authComponent = rootAccessor.authComponent()
+        contactsAccessor = rootAccessor.contactsAccessor()
+        contactsComponent = contactsAccessor?.contactsComponent()
 
         if let authComponent {
             if let state = authComponent.currentState() as? AuthScreenState {
@@ -104,7 +106,7 @@ final class RootViewModel: ObservableObject {
             }
         }
 
-        if let contactsComponent {
+        if let contactsComponent, let contactsAccessor {
             if let state = contactsComponent.currentState() as? ContactsListState {
                 contactsState = state
             }
@@ -115,10 +117,10 @@ final class RootViewModel: ObservableObject {
                     self.contactsState = next
                 }
             }
-            contactsChildSubscription = contactsComponent.watchChildKind { [weak self] kind in
+            contactsChildSubscription = contactsAccessor.watchKind { [weak self] kind in
                 guard let self else { return }
                 Task { @MainActor in
-                    self.childKind = Self.mapContactsKind(kind)
+                    self.childKind = Self.map(contactsKind: kind)
                     self.rebindContactsChild()
                 }
             }
@@ -132,9 +134,9 @@ final class RootViewModel: ObservableObject {
         infoState = nil
         editorState = nil
 
-        guard let contactsComponent else { return }
+        guard let contactsAccessor else { return }
 
-        if let infoComponent = contactsComponent.currentInfoComponentOrNull() {
+        if let infoComponent = contactsAccessor.infoComponent() {
             if let state = infoComponent.currentState() as? ContactInfoState {
                 infoState = state
             }
@@ -147,8 +149,7 @@ final class RootViewModel: ObservableObject {
             }
         }
 
-        let editorComponent = contactsComponent.currentCreateComponentOrNull() ?? contactsComponent.currentEditComponentOrNull()
-        if let editorComponent {
+        if let editorComponent = contactsAccessor.activeEditorComponent() {
             if let state = editorComponent.currentState() as? ContactEditorState {
                 editorState = state
             }
@@ -162,21 +163,25 @@ final class RootViewModel: ObservableObject {
         }
     }
 
-    private static func mapRootKind(_ value: Any?) -> ChildKind {
-        let raw = String(describing: value).lowercased()
-        if raw.contains("contact_info") { return .contactInfo }
-        if raw.contains("contact_create") { return .contactCreate }
-        if raw.contains("contact_edit") { return .contactEdit }
-        if raw.contains("contacts") { return .contactsList }
-        return .auth
+    private static func map(rootKind kind: AppleRootAccessorKind) -> ChildKind {
+        switch kind {
+        case .auth: return .auth
+        case .contactsList: return .contactsList
+        case .contactInfo: return .contactInfo
+        case .contactCreate: return .contactCreate
+        case .contactEdit: return .contactEdit
+        default: return .auth
+        }
     }
 
-    private static func mapContactsKind(_ value: Any?) -> ChildKind {
-        let raw = String(describing: value).lowercased()
-        if raw.contains("info") { return .contactInfo }
-        if raw.contains("create") { return .contactCreate }
-        if raw.contains("edit") { return .contactEdit }
-        return .contactsList
+    private static func map(contactsKind kind: AppleContactsAccessorKind) -> ChildKind {
+        switch kind {
+        case .list: return .contactsList
+        case .info: return .contactInfo
+        case .create: return .contactCreate
+        case .edit: return .contactEdit
+        default: return .contactsList
+        }
     }
 
     func updateLogin(_ value: String) {
@@ -232,68 +237,59 @@ final class RootViewModel: ObservableObject {
     }
 
     func infoBack() {
-        contactsComponent?.currentInfoComponentOrNull()?.back()
+        contactsAccessor?.infoComponent()?.back()
     }
 
     func infoToggleExtra() {
-        contactsComponent?.currentInfoComponentOrNull()?.toggleExtra()
+        contactsAccessor?.infoComponent()?.toggleExtra()
     }
 
     func infoEdit() {
-        contactsComponent?.currentInfoComponentOrNull()?.edit()
+        contactsAccessor?.infoComponent()?.edit()
     }
 
     func infoDelete() {
-        contactsComponent?.currentInfoComponentOrNull()?.delete()
+        contactsAccessor?.infoComponent()?.delete()
     }
 
     func infoInvite() {
-        contactsComponent?.currentInfoComponentOrNull()?.invite()
+        contactsAccessor?.infoComponent()?.invite()
     }
 
     func editorUpdateName(_ value: String) {
-        contactsComponent?.currentCreateComponentOrNull()?.updateName(value: value)
-        contactsComponent?.currentEditComponentOrNull()?.updateName(value: value)
+        contactsAccessor?.activeEditorComponent()?.updateName(value: value)
     }
 
     func editorUpdateEmail(_ value: String) {
-        contactsComponent?.currentCreateComponentOrNull()?.updateEmail(value: value)
-        contactsComponent?.currentEditComponentOrNull()?.updateEmail(value: value)
+        contactsAccessor?.activeEditorComponent()?.updateEmail(value: value)
     }
 
     func editorUpdatePhone(_ value: String) {
-        contactsComponent?.currentCreateComponentOrNull()?.updatePhone(value: value)
-        contactsComponent?.currentEditComponentOrNull()?.updatePhone(value: value)
+        contactsAccessor?.activeEditorComponent()?.updatePhone(value: value)
     }
 
     func editorUpdateNote(_ value: String) {
-        contactsComponent?.currentCreateComponentOrNull()?.updateNote(value: value)
-        contactsComponent?.currentEditComponentOrNull()?.updateNote(value: value)
+        contactsAccessor?.activeEditorComponent()?.updateNote(value: value)
     }
 
     func editorUpdateTags(_ value: String) {
-        contactsComponent?.currentCreateComponentOrNull()?.updateTags(value: value)
-        contactsComponent?.currentEditComponentOrNull()?.updateTags(value: value)
+        contactsAccessor?.activeEditorComponent()?.updateTags(value: value)
     }
 
     func editorSave() {
-        contactsComponent?.currentCreateComponentOrNull()?.save()
-        contactsComponent?.currentEditComponentOrNull()?.save()
+        contactsAccessor?.activeEditorComponent()?.save()
     }
 
     func editorBack() {
-        contactsComponent?.currentCreateComponentOrNull()?.back()
-        contactsComponent?.currentEditComponentOrNull()?.back()
+        contactsAccessor?.activeEditorComponent()?.back()
     }
 
     func editorConfirmLeave() {
-        contactsComponent?.currentCreateComponentOrNull()?.confirmLeave()
-        contactsComponent?.currentEditComponentOrNull()?.confirmLeave()
+        contactsAccessor?.activeEditorComponent()?.confirmLeave()
     }
 
     func editorCancelLeave() {
-        contactsComponent?.currentCreateComponentOrNull()?.cancelLeave()
-        contactsComponent?.currentEditComponentOrNull()?.cancelLeave()
+        contactsAccessor?.activeEditorComponent()?.cancelLeave()
     }
 
     deinit {
@@ -303,5 +299,6 @@ final class RootViewModel: ObservableObject {
         contactsChildSubscription?.cancel()
         infoSubscription?.cancel()
         editorSubscription?.cancel()
+        rootAccessor.rootComponent().destroy()
     }
 }

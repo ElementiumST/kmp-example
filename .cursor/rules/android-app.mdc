@@ -6,8 +6,9 @@ alwaysApply: false
 
 # Android App
 
-- `android/app` is the Android Compose shell and depends on `kmp/core`.
+- `android/app` is the Android Compose shell and depends on `kmp/app` and `kmp/navigation`.
 - Keep Android-only UI, manifest, resources, and app startup code in this zone.
 - Do not add direct dependencies from `android/app` to `kmp/data` or `kmp/domain` unless the architecture is intentionally changing.
-- If the task affects shared state or feature flow, inspect `kmp/core` before changing Android code.
+- If the task affects shared state or feature flow, inspect `kmp/app`, `kmp/navigation`, then `kmp/core` compatibility layer.
+- Ensure shared lifecycle teardown happens in `Activity.onDestroy()` by invoking `rootComponent.destroy()`.
 - Be careful with `AndroidManifest.xml`, resources, and platform permissions because they do not affect Web or iOS shells.

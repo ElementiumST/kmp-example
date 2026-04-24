@@ -1,126 +1,15 @@
 import { Injectable, signal } from '@angular/core';
-
-export type RootChildKind =
-  | 'AUTH'
-  | 'CONTACTS_LIST'
-  | 'CONTACT_INFO'
-  | 'CONTACT_CREATE'
-  | 'CONTACT_EDIT';
-
-export type ContactsChildKind = 'LIST' | 'INFO' | 'CREATE' | 'EDIT';
-
-export type AuthState = {
-  login: string;
-  password: string;
-  isLoading: boolean;
-  isAuthorized: boolean;
-  errorMessage: string | null;
-  sessionId: string | null;
-  authorizedLogin: string | null;
-  authorizedName: string | null;
-  submitLabel: string;
-  canSubmit: boolean;
-};
-
-export type ContactItem = {
-  contactId: string;
-  profileId: string;
-  name: string;
-  email: string;
-  phone: string;
-  note: string;
-  tags: string[];
-  interlocutorType: string;
-  avatarUrl: string;
-  aboutSelf: string;
-  additionalContact: string;
-  externalDomainHost: string;
-  externalDomainName: string;
-  presence: string;
-  isNote: boolean;
-  isInContacts: boolean;
-};
-
-export type InterlocutorItem = {
-  profileId: string;
-  contactId: string;
-  name: string;
-  email: string;
-  phone: string;
-  avatarUrl: string;
-  interlocutorType: string;
-  externalDomainHost: string;
-  externalDomainName: string;
-  isInContacts: boolean;
-};
-
-export type ContactAddOverlayState = {
-  query: string;
-  isLoading: boolean;
-  isLoadingMore: boolean;
-  errorMessage: string | null;
-  hasMore: boolean;
-  foreignOffset: number;
-  companyOffset: number;
-  directoryOffset: number;
-  domainOffset: number;
-  items: InterlocutorItem[];
-  invitingProfileIds: string[];
-};
-
-export type ContactsListState = {
-  query: string;
-  total: number;
-  isLoading: boolean;
-  isLoadingMore: boolean;
-  isRefreshing: boolean;
-  errorMessage: string | null;
-  hasMore: boolean;
-  isAddOverlayVisible: boolean;
-  contextMenuContactIndex: number;
-  snackbarMessage: string | null;
-  items: ContactItem[];
-  presence: Record<string, string>;
-  addOverlay: ContactAddOverlayState;
-};
-
-export type ContactInfoState = {
-  contact: ContactItem;
-  isExtraExpanded: boolean;
-  isDeleting: boolean;
-  isInviting: boolean;
-  errorMessage: string | null;
-  snackbarMessage: string | null;
-  isCallButtonsVisible: boolean;
-  isDeleteVisible: boolean;
-  isAddToContactsVisible: boolean;
-};
-
-export type ContactEditorState = {
-  mode: 'CREATE' | 'EDIT';
-  isNote: boolean;
-  isDirty: boolean;
-  isSaving: boolean;
-  errorMessage: string | null;
-  showLeaveConfirmation: boolean;
-  dismissed: boolean;
-  canSave: boolean;
-  draft: {
-    name: string;
-    email: string;
-    phone: string;
-    note: string;
-    tagsText: string;
-  };
-  validation: {
-    isValid: boolean;
-    name: string | null;
-    email: string | null;
-    phone: string | null;
-    note: string | null;
-    tags: string | null;
-  };
-};
+import {
+  generatedRouteTable,
+  type AuthState,
+  type ContactItem,
+  type ContactEditorState,
+  type ContactInfoState,
+  type ContactsChildKind,
+  type ContactsListState,
+  type InterlocutorItem,
+  type RootChildKind,
+} from './generated/bridge-types';
 
 type StateSubscription = { cancel: () => void };
 
@@ -173,6 +62,7 @@ type KmpBridge = {
   contactEditorBack: () => void;
   contactEditorConfirmLeave: () => void;
   contactEditorCancelLeave: () => void;
+  destroy: () => void;
 };
 
 type KmpCoreGlobal = {
@@ -308,6 +198,7 @@ export class KmpBridgeService {
   });
   readonly contactInfoState = signal<ContactInfoState | null>(null);
   readonly contactEditorState = signal<ContactEditorState | null>(null);
+  readonly routePath = signal('auth');
   readonly ready = signal(false);
 
   private bridge: KmpBridge | null = null;
@@ -328,7 +219,11 @@ export class KmpBridgeService {
 
     this.initPromise = (async () => {
       await loadSharedCoreScripts();
-      const core = (globalThis as unknown as { ['kmp-example.kmp:core']?: KmpCoreGlobal })['kmp-example.kmp:core'];
+      const globals = globalThis as unknown as {
+        ['kmp-example.kmp:bridge-web']?: KmpCoreGlobal;
+        ['kmp-example.kmp:core']?: KmpCoreGlobal;
+      };
+      const core = globals['kmp-example.kmp:bridge-web'] ?? globals['kmp-example.kmp:core'];
       const webBridgeFactory = resolveWebBridgeFactory(core);
       if (!webBridgeFactory) {
         throw new Error('KMP WebBridgeFactory is missing from shared-core bundle.');
@@ -348,11 +243,13 @@ export class KmpBridgeService {
 
     this.rootChildKind.set(bridge.currentRootChildKind());
     this.authState.set(parseJson(bridge.authStateJson(), this.authState()));
+    this.updateRoutePath();
     this.syncNestedStates();
 
     this.subscriptions.push(
       bridge.watchRootChildKind((value) => {
         this.rootChildKind.set(value);
+        this.updateRoutePath();
         this.syncNestedStates();
       }),
     );
@@ -378,6 +275,7 @@ export class KmpBridgeService {
 
     this.contactsChildSubscription = bridge.watchContactsChildKind((value) => {
       this.contactsChildKind.set(value);
+      this.updateRoutePath();
       this.syncDetailSubscriptions();
     });
     this.contactsListSubscription = bridge.watchContactsListState((value) => {
@@ -386,6 +284,7 @@ export class KmpBridgeService {
       );
     });
     this.syncDetailSubscriptions();
+    this.updateRoutePath();
   }
 
   private syncDetailSubscriptions(): void {
@@ -551,6 +450,20 @@ export class KmpBridgeService {
     this.contactsListSubscription = null;
     this.infoSubscription = null;
     this.editorSubscription = null;
+  }
+
+  destroy(): void {
+    this.cancelAllSubscriptions();
+    this.bridge?.destroy();
+    this.bridge = null;
+    this.ready.set(false);
+  }
+
+  private updateRoutePath(): void {
+    const root = this.rootChildKind();
+    const contacts = this.contactsChildKind();
+    const matched = generatedRouteTable.find((item) => item.root === root && item.contacts === contacts);
+    this.routePath.set(matched?.path ?? 'auth');
   }
 
   private requireBridge(): KmpBridge {

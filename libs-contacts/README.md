@@ -1,7 +1,7 @@
 # feature-contacts
 
-This library was generated with [Nx](https://nx.dev).
+Эта библиотека была сгенерирована с помощью [Nx](https://nx.dev).
 
-## Running unit tests
+## Запуск юнит-тестов
 
-Run `nx test feature-contacts` to execute the unit tests.
+Чтобы запустить юнит-тесты, выполните `nx test feature-contacts`.

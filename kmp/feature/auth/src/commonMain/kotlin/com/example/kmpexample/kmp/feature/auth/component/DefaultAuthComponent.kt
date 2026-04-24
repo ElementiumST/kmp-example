@@ -9,7 +9,9 @@ import com.example.kmpexample.kmp.domain.usecase.LoginUseCase
 import com.example.kmpexample.kmp.domain.usecase.LoginWithTokenUseCase
 import com.example.kmpexample.kmp.feature.auth.model.AuthScreenAction
 import com.example.kmpexample.kmp.feature.auth.model.AuthScreenState
-import com.example.kmpexample.kmp.feature.base.BaseMviComponent
+import com.example.kmpexample.kmp.feature.base.FeatureStoreComponent
+import com.example.kmpexample.kmp.feature.base.LoggingPlugin
+import com.example.kmpexample.kmp.feature.base.RecoverPlugin
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -22,9 +24,19 @@ class DefaultAuthComponent(
     private val loginUseCase: LoginUseCase,
     private val loginWithTokenUseCase: LoginWithTokenUseCase,
     private val coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
-) : BaseMviComponent<AuthScreenState, AuthScreenAction>(
+) : FeatureStoreComponent<AuthScreenState, AuthScreenAction>(
     initialState = AuthScreenState(),
     coroutineScope = coroutineScope,
+    plugins = listOf(
+        LoggingPlugin(logger = { println("[auth] $it") }),
+        RecoverPlugin { throwable, state ->
+            state.copy(
+                isLoading = false,
+                errorMessage = throwable.message ?: "Unexpected auth error",
+                canSubmit = state.login.isNotBlank() && state.password.isNotBlank(),
+            )
+        },
+    ),
 ),
     AuthComponent,
     ComponentContext by componentContext {
@@ -45,6 +57,7 @@ class DefaultAuthComponent(
     }
 
     override fun onAction(action: AuthScreenAction) {
+        publishAction(action)
         when (action) {
             is AuthScreenAction.UpdateLogin -> updateState(login = action.value)
             is AuthScreenAction.UpdatePassword -> updateState(password = action.value)
@@ -69,7 +82,7 @@ class DefaultAuthComponent(
         val persistedSession = getPersistedAuthSessionUseCase() ?: return
         val loginToken = persistedSession.loginToken
         if (loginToken.isNullOrBlank()) {
-            coroutineScope.launch {
+            launchSafely {
                 clearPersistedAuthSessionUseCase()
             }
             return
@@ -81,7 +94,7 @@ class DefaultAuthComponent(
             canSubmit = false,
         )
 
-        coroutineScope.launch {
+        launchSafely {
             runCatching {
                 loginWithTokenUseCase(loginToken)
             }.onSuccess { session ->
@@ -99,7 +112,7 @@ class DefaultAuthComponent(
             return
         }
 
-        coroutineScope.launch {
+        launchSafely {
             mutableState.value = currentState.copy(
                 isLoading = true,
                 errorMessage = null,

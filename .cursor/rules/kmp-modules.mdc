@@ -8,7 +8,13 @@ alwaysApply: false
 
 - `kmp/domain` owns shared models, repository contracts, and use cases. Start there for business rules.
 - `kmp/data` owns repository implementations, Ktor clients, SQLDelight, and platform-specific data wiring. It depends on `kmp/domain`.
-- `kmp/feature/base` owns reusable feature primitives such as base MVI types.
-- `kmp/core` composes the app, wires shared dependencies, and exposes Apple/Web bridge entry points.
+- `kmp/feature/base` owns reusable feature runtime primitives, plugins, and lifecycle helpers.
+- `kmp/app` owns shared startup facades and root factory access points.
+- `kmp/navigation` owns root navigation aliases/contracts for platform shells.
+- `kmp/bridge-web` owns the `@JsExport` surface (`WebBridgeFactory`, `WebRootBridge`), all JSON shims, string kind mappers and the `.d.ts` contract for Web.
+- `kmp/bridge-apple` owns Apple-facing bridge facade APIs (`AppleAppFactory`, `AppleRootAccessor`, `AppleContactsAccessor`), plus the `SharedCore` XCFramework definition.
+- `kmp/core` remains as migration compatibility layer while composition code is being split.
+- `kmp/tools/bridge-annotations` and `kmp/tools/bridge-codegen` own bridge source annotations and KSP generation. Annotations are used only inside bridge modules — never on shared feature interfaces.
+- Pattern-matching helpers such as `currentXxxOrNull()`, `currentChildKind()`, `watchChildKind()` MUST live in bridge modules, NOT on shared component interfaces.
 - If a task is platform-specific, avoid pushing it into shared KMP code unless the behavior must be shared.
 - Before changing targets or dependencies, read the affected module `build.gradle.kts`.

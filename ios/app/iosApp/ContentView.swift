@@ -91,21 +91,51 @@ private struct ContactsListView: View {
                     Spacer()
                 } else {
                     List(Array(contacts.enumerated()), id: \.offset) { index, contact in
-                        Button {
-                            viewModel.openContact(Int32(index))
-                        } label: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(contact.name.isEmpty ? "(без имени)" : contact.name)
-                                    .font(.headline)
-                                if !contact.email.isEmpty {
-                                    Text(contact.email)
-                                        .font(.footnote)
-                                        .foregroundStyle(.secondary)
-                                } else if !contact.phone.isEmpty {
-                                    Text(contact.phone)
-                                        .font(.footnote)
-                                        .foregroundStyle(.secondary)
+                        HStack(spacing: 8) {
+                            Button {
+                                viewModel.openContact(Int32(index))
+                            } label: {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(contact.name.isEmpty ? "(без имени)" : contact.name)
+                                        .font(.headline)
+                                    if !contact.email.isEmpty {
+                                        Text(contact.email)
+                                            .font(.footnote)
+                                            .foregroundStyle(.secondary)
+                                    } else if !contact.phone.isEmpty {
+                                        Text(contact.phone)
+                                            .font(.footnote)
+                                            .foregroundStyle(.secondary)
+                                    }
                                 }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .buttonStyle(.plain)
+
+                            Menu {
+                                Button("Открыть") {
+                                    viewModel.openContact(Int32(index))
+                                }
+                                if !contact.profileId.isEmpty && !contact.isNote {
+                                    Button("Сообщение") {
+                                        viewModel.writeMessage(Int32(index))
+                                    }
+                                    Button("Аудиозвонок") {
+                                        viewModel.callAudio(Int32(index))
+                                    }
+                                    Button("Видеозвонок") {
+                                        viewModel.callVideo(Int32(index))
+                                    }
+                                }
+                                Button("Изменить") {
+                                    viewModel.openEdit(Int32(index))
+                                }
+                                Button("Удалить", role: .destructive) {
+                                    viewModel.deleteContact(Int32(index))
+                                }
+                            } label: {
+                                Image(systemName: "ellipsis.circle")
+                                    .font(.title3)
                             }
                         }
                         .swipeActions {
@@ -118,6 +148,31 @@ private struct ContactsListView: View {
                             .tint(.blue)
                         }
                     }
+
+                    if viewModel.contactsState.hasMore {
+                        Button(viewModel.contactsState.isLoadingMore ? "Загрузка..." : "Загрузить еще") {
+                            viewModel.loadMoreContacts()
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(viewModel.contactsState.isLoadingMore)
+                    }
+                }
+
+                if let errorMessage = viewModel.contactsState.errorMessage {
+                    Text(errorMessage)
+                        .font(.footnote)
+                        .foregroundStyle(.red)
+                        .multilineTextAlignment(.center)
+                }
+
+                if let snackbarMessage = viewModel.contactsState.snackbarMessage {
+                    Text(snackbarMessage)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .onAppear {
+                            viewModel.dismissContactsSnackbar()
+                        }
                 }
             }
             .padding(.horizontal, 16)
@@ -201,6 +256,13 @@ private struct AddContactSheet: View {
                             }
                         }
                     }
+
+                    if viewModel.contactsState.addOverlay.hasMore {
+                        Button(viewModel.contactsState.addOverlay.isLoadingMore ? "Загрузка..." : "Загрузить еще") {
+                            viewModel.loadMoreAddOverlay()
+                        }
+                        .disabled(viewModel.contactsState.addOverlay.isLoadingMore)
+                    }
                 }
             }
             .navigationTitle("Добавить контакт")
@@ -225,15 +287,55 @@ private struct ContactInfoView: View {
                     infoRow("Телефон", contact.phone)
                     infoRow("Комментарий", contact.note)
                     infoRow("Теги", (contact.tags as? [String])?.joined(separator: ", ") ?? "")
+
+                    if state?.isExtraExpanded == true {
+                        infoRow("О себе", contact.aboutSelf)
+                        infoRow("Доп. контакт", contact.additionalContact)
+                    }
                 }
                 HStack {
                     Button("Назад") { viewModel.infoBack() }
                     Button("Изменить") { viewModel.infoEdit() }
-                    Button("Удалить", role: .destructive) { viewModel.infoDelete() }
+                }
+                Button((state?.isExtraExpanded ?? false) ? "Скрыть подробности" : "Показать подробности") {
+                    viewModel.infoToggleExtra()
+                }
+                if state?.isCallButtonsVisible == true {
+                    HStack {
+                        Button("Аудио") { viewModel.infoAudioCall() }
+                            .buttonStyle(.bordered)
+                        Button("Видео") { viewModel.infoVideoCall() }
+                            .buttonStyle(.bordered)
+                        Button("Сообщение") { viewModel.infoWriteMessage() }
+                            .buttonStyle(.bordered)
+                    }
                 }
                 if state?.isAddToContactsVisible == true {
-                    Button("Добавить в контакты") { viewModel.infoInvite() }
+                    Button((state?.isInviting == true) ? "Отправка..." : "Добавить в контакты") { viewModel.infoInvite() }
                         .buttonStyle(.borderedProminent)
+                        .disabled(state?.isInviting == true)
+                }
+                if state?.isDeleteVisible == true {
+                    Button((state?.isDeleting == true) ? "Удаление..." : "Удалить контакт", role: .destructive) {
+                        viewModel.infoDelete()
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(state?.isDeleting == true)
+                }
+                if let errorMessage = state?.errorMessage {
+                    Text(errorMessage)
+                        .font(.footnote)
+                        .foregroundStyle(.red)
+                        .multilineTextAlignment(.leading)
+                }
+                if let snackbarMessage = state?.snackbarMessage {
+                    Text(snackbarMessage)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.leading)
+                        .onAppear {
+                            viewModel.infoDismissSnackbar()
+                        }
                 }
             }
             .padding(16)
@@ -267,18 +369,36 @@ private struct ContactEditorView: View {
                         set: { viewModel.editorUpdateName($0) }
                     ))
                     .textFieldStyle(.roundedBorder)
+                    if let error = state?.validation.name {
+                        Text(fieldErrorMessage(error))
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
 
                     TextField("Email", text: Binding(
                         get: { state?.draft.email ?? "" },
                         set: { viewModel.editorUpdateEmail($0) }
                     ))
                     .textFieldStyle(.roundedBorder)
+                    if let error = state?.validation.email {
+                        Text(fieldErrorMessage(error))
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
 
                     TextField("Телефон", text: Binding(
                         get: { state?.draft.phone ?? "" },
                         set: { viewModel.editorUpdatePhone($0) }
                     ))
                     .textFieldStyle(.roundedBorder)
+                    if let error = state?.validation.phone {
+                        Text(fieldErrorMessage(error))
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
 
                 TextField("Комментарий", text: Binding(
@@ -287,16 +407,35 @@ private struct ContactEditorView: View {
                 ), axis: .vertical)
                 .lineLimit(3...6)
                 .textFieldStyle(.roundedBorder)
+                if let error = state?.validation.note {
+                    Text(fieldErrorMessage(error))
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
 
                 TextField("Теги", text: Binding(
                     get: { state?.draft.tagsText ?? "" },
                     set: { viewModel.editorUpdateTags($0) }
                 ))
                 .textFieldStyle(.roundedBorder)
+                if let error = state?.validation.tags {
+                    Text(fieldErrorMessage(error))
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                if let errorMessage = state?.errorMessage {
+                    Text(errorMessage)
+                        .font(.footnote)
+                        .foregroundStyle(.red)
+                        .multilineTextAlignment(.leading)
+                }
 
                 HStack {
                     Button("Назад") { viewModel.editorBack() }
-                    Button(isCreate ? "Создать" : "Сохранить") {
+                    Button((state?.isSaving ?? false) ? "Сохранение..." : (isCreate ? "Создать" : "Сохранить")) {
                         viewModel.editorSave()
                     }
                     .buttonStyle(.borderedProminent)
@@ -314,4 +453,18 @@ private struct ContactEditorView: View {
             Button("Отмена", role: .cancel) { viewModel.editorCancelLeave() }
         }
     }
+}
+
+private func fieldErrorMessage(_ error: ContactFieldError) -> String {
+    let key = String(describing: error).uppercased()
+    if key.contains("EMPTY") {
+        return "Поле обязательно"
+    }
+    if key.contains("TOO_LONG") {
+        return "Превышена максимальная длина"
+    }
+    if key.contains("INVALID_FORMAT") {
+        return "Неверный формат"
+    }
+    return key
 }

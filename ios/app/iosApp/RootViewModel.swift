@@ -200,6 +200,10 @@ final class RootViewModel: ObservableObject {
         contactsComponent?.refresh()
     }
 
+    func loadMoreContacts() {
+        contactsComponent?.loadMore()
+    }
+
     func updateContactsQuery(_ value: String) {
         contactsComponent?.updateQuery(value: value)
     }
@@ -236,6 +240,22 @@ final class RootViewModel: ObservableObject {
         contactsComponent?.deleteFromMenu(contactIndex: index)
     }
 
+    func writeMessage(_ index: Int32) {
+        contactsComponent?.writeMessage(contactIndex: index)
+    }
+
+    func callAudio(_ index: Int32) {
+        contactsComponent?.callAudio(contactIndex: index)
+    }
+
+    func callVideo(_ index: Int32) {
+        contactsComponent?.callVideo(contactIndex: index)
+    }
+
+    func dismissContactsSnackbar() {
+        contactsComponent?.dismissSnackbar()
+    }
+
     func infoBack() {
         contactsAccessor?.infoComponent()?.back()
     }
@@ -254,6 +274,22 @@ final class RootViewModel: ObservableObject {
 
     func infoInvite() {
         contactsAccessor?.infoComponent()?.invite()
+    }
+
+    func infoWriteMessage() {
+        contactsAccessor?.infoComponent()?.writeMessage()
+    }
+
+    func infoAudioCall() {
+        contactsAccessor?.infoComponent()?.audioCall()
+    }
+
+    func infoVideoCall() {
+        contactsAccessor?.infoComponent()?.videoCall()
+    }
+
+    func infoDismissSnackbar() {
+        contactsAccessor?.infoComponent()?.dismissSnackbar()
     }
 
     func editorUpdateName(_ value: String) {
@@ -290,6 +326,10 @@ final class RootViewModel: ObservableObject {
 
     func editorCancelLeave() {
         contactsAccessor?.activeEditorComponent()?.cancelLeave()
+    }
+
+    func loadMoreAddOverlay() {
+        contactsComponent?.loadMoreAddOverlay()
     }
 
     deinit {
